@@ -1,3 +1,11 @@
+
+# Improvements
+# - by default don't show mortgage, but add this in as a checkbox in shiny (include principal and loan)
+# - show first and last date of all transactions?
+# - show projected spend for current month based on days left
+# - For any category, drill down into all transactions for a given month (default 'current month')
+# - spends by day over time for given month (default current month)
+
 #__________________________________________________________________________________________________________________________________
 
 # Once we have CSVs of all spend from TSB, use this code to track spends vs deposits over time, and hoopefully classify into spend categories. Basically replicate westpac cashnav. Then put in a dashboard if I can be bothered.
@@ -10,10 +18,11 @@
 rm(list=ls())
 
 downloadsPath <- 'C:/Users/user/Downloads/' # where statements get saved
-projectPath <- 'C:/Users/user/Documents/JAMES/Spend tracker/' # where code lives
-dataPath <- paste0(projectPath, '/pastTransactions/') # where transactions will get saved - in case TSB can't give us e.g. more than 3mo
+projectPath <- 'C:/Users/user/Documents/JAMES/SpendTracker/' # where code lives
+dataPath <- paste0(projectPath, 'pastTransactions/') # where transactions will get saved - in case TSB can't give us e.g. more than 3mo
 
 suppressMessages(library(dplyr))
+suppressMessages(library(ggplot2))
 library(lubridate)
 
 #__________________________________________________________________________________________________________________________________
@@ -27,21 +36,16 @@ library(lubridate)
 # - 2 x liberty table (i.e. mortgage)
 # - Save them for as big a date range as you like, just make sure it overlaps with last time. Code below will remove duplicate entries
 # - Save them in 'CSV including balance' format on website, but note can't do this for VISA.
-# - DELETE TSB FILES FROM DOWNLOADS ONCE CODE HAS RUN
+# - DELETE TSB FILES FROM DOWNLOADS ONCE CODE HAS RUN (actually not necessary, R removes de-dupes)
 
-answer <- winDialog('yesno', 'Is new data getting updated from downloads folder?') # can turn to a checkbox in shiny
+#+++++++++++++++
+# Read data in from downloads folder if it exists
+#+++++++++++++++
 
-if(answer=='YES'){
+tsbfiles <- list.files(downloadsPath)[grepl('[Tt][Ss][Bb]', list.files(downloadsPath))]
 
-  #+++++++++++++++
-  # Read data in from downloads folder
-  #+++++++++++++++
+if(length(tsbfiles)>0){
   
-  # First check all files are in downloads
-  tsbfiles <- list.files(downloadsPath)[grepl('[Tt][Ss][Bb]', list.files(downloadsPath))]
-  if((any(grepl('4548670363823106', tsbfiles)) & any(grepl('70015100640',  tsbfiles))  & any(grepl('70015100641',  tsbfiles))  & any(grepl('70015100647',  tsbfiles)))!=TRUE){
-    stop('Havent downloaded all TSB files to downloads folder.')
-  }
   # Read in new downloaded data, inc. automatically saving to dataPath
   newList <- lapply(tsbfiles, function(x) {
     trans <- read.csv(paste0(downloadsPath, x), stringsAsFactors = FALSE)
@@ -88,7 +92,7 @@ oldDF <- bind_rows(oldList)
 oldDF <- as.tbl(oldDF)
 
 # Bind to new
-if(answer=='YES'){ 
+if(exists("newDF")){ 
   dd <- bind_rows(newDF, oldDF)
 } else {
   dd <- oldDF
@@ -123,6 +127,10 @@ dd <- dd %>%
   filter(acc!='visa' | !grepl('PAYMENT RECEIVED', Description)) %>%
   filter(acc!='revolving' | !grepl('credit card', Particulars))
 
+# Also exclude mortgage repayments that show up as a +ve into mortgage accounts, for same reason as above
+dd <- dd %>%
+  filter(!grepl('mortgage', acc) | !grepl('Repayment', Particulars))
+
 #__________________________________________________________________________________________________________________________________
 
 # Classify transactions ----
@@ -133,49 +141,151 @@ dd$Particulars <- toupper(dd$Particulars)
 dd <- dd %>%
   mutate(
     spendCategory=
-             ifelse(grepl('ANNALECT|50119ACC', Description), 'Pay', 
-             ifelse(grepl('LOAN INTEREST|SERVICE FEE|CARD REISSUE FE|ACCOUNT FEE', Description) |
-                      grepl('LOAN/EQUITY', Particulars), 'MortgageAndBankFees', 
-                    ifelse(grepl('COUNT ?DOWN|NEW ?WORLD|SAFFRON|EAT ?ME', Description), 'Groceries', 
-                           ifelse(grepl('BURGER|DOMINOS|WENDY|MCDONALDS|KEBAB', Description), 'FastFood',
-                                  ifelse(grepl('CAFE|DEAR JERVOIS|SUSHI|BAKERY|BISTRO|RESTAURANT|SUGARGRILL|STARK|1929', Description), 'CafesAndEatingOut',
-                                         ifelse(grepl('Z TE AT|CAR ?PARK|VTNZ|BP ', Description), 'Car',
-                                                ifelse(grepl('BABY|MOCKA', Description), 'Baby',
-                                                       ifelse(grepl('MITRE|HAMMER|KINGS|CITTA|FREEDOM FURNITURE|HOMESTEAD PICTURE|SPOTLIGHT|STORAGE ?BOX', Description), 'Home&Garden',
-                                                              ifelse(grepl('WATERCARE|SLINGSHOT|SKINNY|AKL COUNCIL', Description), 'Utilities',
-                                                                     ifelse(grepl('PHARMACY|HEALTH NEW LYNN|PROACTIVE|ASTERON', Description), 'Health',
-                                                                            ifelse(grepl('NETFLIX|MOVIES|CINEMA', Description), 'Entertainment',
-                                                                            'Other'))))))))))))
+      # Pay
+      ifelse((grepl('ANNALECT|50119ACC|MINISTRY OF|TAX FAM31', Description) & Amount > 0), 'PayAndGovnContributions', 
+             
+             # Mortgage and bank fees
+             ifelse(grepl('SERVICE FEE|CARD REISSUE FE|ACCOUNT FEE', Description), 'BankFees',
+                    ifelse(grepl('LOAN/EQUITY', Particulars), 'MortgagePrincipal',
+                           ifelse(grepl('LOAN INTEREST', Description), 'MortgageInterest',
+                                  
+                                  # Everything else
+                                  ifelse(grepl('COUNT ?DOWN|NEW ?WORLD|SAFFRON|EAT ?ME', Description), 'Groceries', 
+                                         ifelse(grepl('BURGER|DOMINOS|WENDY|MCDONALDS|KEBAB', Description), 'FastFood',
+                                                ifelse(grepl('CAFE|DEAR JERVOIS|SUSHI|BAKERY|BISTRO|RESTAURANT|SUGARGRILL|STARK|1929', Description), 'CafesAndEatingOut',
+                                                       ifelse(grepl('Z TE AT|CAR ?PARK|VTNZ|BP |NZ ?TRANSPORT', Description), 'Car',
+                                                              ifelse(grepl('BABY|MOCKA', Description), 'Baby',
+                                                                     ifelse(grepl('MITRE|HAMMER|KINGS|CITTA|FREEDOM FURNITURE|HOMESTEAD PICTURE|SPOTLIGHT|STORAGE ?BOX', Description), 'Home&Garden',
+                                                                            ifelse(grepl('WATERCARE|SLINGSHOT|SKINNY|AKL COUNCIL', Description), 'Utilities',
+                                                                                   ifelse(grepl('PHARMACY|HEALTH NEW LYNN|PROACTIVE|ASTERON', Description), 'Health',
+                                                                                          ifelse(grepl('NETFLIX|MOVIES|CINEMA', Description), 'Entertainment',
+                                                                                                 'Other'))))))))))))))
 dd <- dd %>%
   mutate(
     spendCategory=
-      ifelse(grepl('RODNEY ?WAYNE|HUE|ZARA|MOOCHI|SUPERETTE|SISTERS AND CO|KATHRYN ?WILSON|STITCHES|HAIRDRESS', Description), 'EmilyClothesAndBeauty',
+      ifelse(grepl('RODNEY ?WAYNE|HUE|ZARA|MOOCHI|SISTERS AND CO|KATHRYN ?WILSON|STITCHES|HAIRDRESS|KSUBI|THE ?SLEEP ?STORE', Description) |
+               (grepl('SUPERETTE', Description) & Amount < -50), # separates superette store from dairies.
+             'EmilyClothesAndBeauty',
              ifelse(grepl('S A F E', Description), 'Charity',
                     ifelse(grepl('K? -?MART|FARMERS|WAREHOUSE|TWL 187 ST LUKES', Description), 'KmartFarmersWarehouse',
-                    spendCategory))))
+                           ifelse(grepl('^MO ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ?$', Description), 'MoPayments',
+                    spendCategory)))))
+
+#+++++++++++++++
+# Record information on unclassified transactions
+#+++++++++++++++
 
 # Look for other big transactions to exclude
 unclassifiedBigSpends <- dd %>%
-  filter(spendCategory=='Other') %>%
+  filter(spendCategory=='Other' & Amount < -50) %>%
   select(-Balance, -spendCategory, -Reference) %>%
-  arrange(Amount) %>%
-  head()
-cat('Biggest unclassified spends:\n')
+  arrange(Amount)
+
+cat('Unclassified spends over $50:\n')
 print(unclassifiedBigSpends)
+
 unclassifiedBigDeposits <- dd %>%
-  filter(spendCategory=='Other') %>%
+  filter(spendCategory=='Other'  & Amount > 50) %>%
   select(-Balance, -spendCategory, -Reference) %>%
-  arrange(desc(Amount)) %>%
-  head()
-cat('Biggest unclassified deposits:\n')
+  arrange(desc(Amount))
+
+cat('Unclassified deposits over $50:\n')
 print(unclassifiedBigDeposits)
 
-cat(nrow(filter(dd, spendCategory=='Other')), 'transactions constituting', round(-1*sum(dd$Amount[dd$Amount<0]), 0), 'dollars unaccounted for\n')
+# Record all unclassified deposits and spends and print info on total value of unclassified transactions
+unclassifiedSpends <- dd %>%
+  filter(spendCategory=='Other' & Amount < 0) %>%
+  arrange(desc(Amount))
+unclassifiedDeposits <- dd %>%
+  filter(spendCategory=='Other' & Amount > 0) %>%
+  arrange(desc(Amount))
+cat(nrow(unclassifiedSpends), 'withdrawals constituting', round(sum(unclassifiedSpends$Amount), 0), 'dollars unaccounted for\n')
+cat(nrow(unclassifiedDeposits), 'deposits constituting', round(sum(unclassifiedDeposits$Amount), 0), 'dollars unaccounted for\n')
 
 #__________________________________________________________________________________________________________________________________
 
-# Calc money in and money out per month, total and by spend category ----
+# Create outputs ----
 #__________________________________________________________________________________________________________________________________
+
+#+++++++++++++++
+# First need to create ordered factor for month, so ggplot will plot correctly
+#+++++++++++++++
+
+dd <- dd %>%
+  mutate(month=format(Date, '%b %y'))
+monthOrder <- dd %>%
+  arrange(Date) %>%
+  distinct(month)
+monthOrder <- monthOrder %>%
+  mutate(myorder=1:nrow(.))
+dd <- dd %>%
+  left_join(monthOrder, by='month') %>%
+  arrange(Date)
+dd$month <- factor(dd$month, levels=unique(dd$month[order(dd$myorder)]), ordered=TRUE)
+
+#+++++++++++++++
+# Total balance (deposits minus withdrawals)
+#+++++++++++++++
+
+dd %>%
+  group_by(month) %>%
+  summarise(Amount=round(sum(Amount), 0)) %>%
+  mutate(posneg=ifelse(Amount>0, 'pos', 'neg')) %>%
+  ggplot(aes(month, Amount, fill=posneg)) + geom_bar(stat='identity') + 
+  geom_text(aes(label=Amount)) + 
+  xlab("") + ylab("Monthly balance ($)") + 
+  theme(legend.position="none") + ggtitle('Overall balance per month')
+str(format(dd$Date, '%b%Y'))
+
+#+++++++++++++++
+# Spends by category for selected month, spends over time, and transaction list, with options to:
+# - include or exclude mortgage
+# - show only a specific category
+#+++++++++++++++
+
+# Filter down based on dashboard inputs - NB filtering for chosenCategory happens further down cos always want to show everything in below plot
+chosenMonth <- 'Feb 19' # 'all months'
+if(chosenMonth!='all months') plotdf <- filter(dd, month==chosenMonth) else(plotdf <- dd)
+excludeMortgage <- 'Y' # 'Y' or 'N'
+if(excludeMortgage=='Y') plotdf <- filter(plotdf, !grepl('Mortgage', spendCategory)) else(plotdf <- dd)
+
+# For remaining plots exclude pay and any unclassified transactions that show up as 'Other', then make withdrawals +ve
+plotdf <- plotdf %>%
+  filter(Amount<0) %>%
+  mutate(Amount=-1*round(Amount, 0))
+
+# Spends by category
+plotdf %>%
+  group_by(spendCategory) %>%
+  summarise(Amount=sum(Amount)) %>%
+  # Order spend category so shows better order in plots
+  mutate(spendCategory=factor(spendCategory, levels=unique(spendCategory[order(Amount)]))) %>%
+  ggplot(aes(spendCategory, Amount, fill=spendCategory)) + geom_bar(stat='identity') + 
+  geom_text(aes(label=Amount)) + 
+  xlab("") + ylab("Category spend ($)") + 
+  theme(legend.position="none") + ggtitle(paste('Spend by category:', chosenMonth)) +
+  coord_flip()
+
+# Filter category for next two plots based on dash inputs
+chosenCategory <- 'Home&Garden' # 'all categories'
+if(chosenCategory!='all categories') plotdf <- filter(plotdf, spendCategory==chosenCategory)
+
+# Spends over time
+plotdf2 <- plotdf %>% 
+  group_by(Date) %>%
+  summarise(Amount=sum(Amount))
+
+# plot line plot if <1 obs, otherwise scatterplot 
+if(nrow(plotdf2)<2){ 
+  ggplot(plotdf2, aes(Date, Amount)) + geom_point(colour="#00BFC4") + ylab('Amount ($)')
+} else {
+  ggplot(plotdf2, aes(Date, Amount)) + geom_line(colour="#00BFC4")  + ylab('Amount ($)')
+}
+  
+# Show transaction list
+plotdf %>%
+  select(Date, Amount, Description, acc, spendCategory) %>%
+  as.data.frame()
 
 #+++++++++++++++
 # Look at final balances (ex visa)
@@ -188,35 +298,5 @@ dd %>%
   filter(row_number()==n()) %>%
   select(acc, Balance, Date)
 
-#+++++++++++++++
-# calc spend and deposits by category
-#+++++++++++++++
-# 
-# dd %>%
-#   mutate(month=month(date))
-
-
-
-
-# #__________________________________________________________________________________________________________________________________
-# 
-# # TEMP testing web scraping to get statements ----
-# #__________________________________________________________________________________________________________________________________
-# 
-# # From https://stackoverflow.com/questions/52191599/how-do-i-scrape-my-own-data-from-my-banks-website-using-r
-# 
-# # OBSOLETE - TOO MUCH OF A SECURITY RISK I THINK, PROB CANT DO IT DUE TO BANKS SECURITY SETTINGS, AND EASY ENOUGH TO DOWNLOAD STATEMENTS AS-AND-WHEN  
-# 
-# library(rvest)
-# url <- "https://homebank.tsbbank.co.nz/online/"
-# session <- html_session(url)              
-# form <- html_form(session)[[1]]
-# filled_form <- set_values(form, card = "5000530012581547",password = "xxx")
-# session <- submit_form(session,filled_form)
-
-cat('Code complete - delete all TSB files from', downloadsPath, '\n')
-
+cat('IN FUTURE EXCLUDE EVERYTHING BEFORE FEB 2019 (?) - OR WHENEVER PAY AND ALL SPENDS WERE COMING OUT OF TSB\n')
 gc()
-
-
-
