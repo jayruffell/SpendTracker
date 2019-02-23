@@ -1,0 +1,1 @@
+App is in a separate folder so that we can call runApp() to run. See bottom of app.r script for details
