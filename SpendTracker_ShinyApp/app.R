@@ -181,74 +181,114 @@ dd$month <- factor(dd$month, levels=unique(dd$month[order(dd$myorder)]), ordered
 # User interface ----
 #__________________________________________________________________________________________________________________________________
 
-ui <- fluidPage(
-  # titlePanel("How much will Jemily save?"),
-  
-  sidebarLayout(
-    
-    #+++++++++++++++
-    # UI inputs ----
-    #+++++++++++++++
-    
-    sidebarPanel(
-      # numericInput(inputId="numEm", 
-      #              label=h4("E monthly salary after tax:"), 
-      #              value=10), 
-      
-      # Select spend category to plot
-      radioButtons(inputId="chosenCategory", 
-                   label=h4("Spend Category"), 
-                   choiceNames=as.list(c('AllCategories', unique(dd$spendCategory))),
-                   choiceValues=as.list(c('AllCategories', unique(dd$spendCategory))),
-                   selected='AllCategories'),
-      
-      # If 'AllCategories' is chosen above, decide whether to exclude mortgage
-      conditionalPanel(
-        condition = "chosenCategory==AllCategories",
-        radioButtons(inputId="excludeMortgage", 
-                     label=h4("Exclude mortgage payments from plots?"), 
-                     choiceNames=list('Yes', 'No'),
-                     choiceValues=list('Yes', 'No'),
-                     selected='Yes')),
+    # tabPanel("plot", fluid = TRUE,
+    #          sidebarLayout(
+    #            sidebarPanel(sliderInput("year", "Year:", min = 1968, max = 2009, value = 2009, sep='')),
+    #            mainPanel(fluidRow(
+    #              column(7,  plotlyOutput("")),
+    #              column(5, plotlyOutput(""))   
 
-      # Select month to plot
-      radioButtons(inputId="chosenMonth", 
-                   label=h4("Month"), 
-                   choiceNames=as.list(c('All Months', as.character(unique(dd$month)))),
-                   choiceValues=as.list(c('All Months', as.character(unique(dd$month)))),
-                   selected='All Months')
-    ),
-      
-    #+++++++++++++++
-    # UI plot and table positions ----
-    #+++++++++++++++
+
+
+ui <- fluidPage(
+  tabsetPanel(
     
-    mainPanel(
-      br(),
-      h5(helpText('INSTRUCTIONS IF ADDING NEW TRANSACTIONS:')),
-      h5(helpText('Need to save four files to C:/Users/user/Downloads (TSB should automatically save to this locn); 1 x Visa, 1 x Liberty Revolving, and 2 x Liberty Table (i.e. mortgage)')),
-      h5(helpText('Save them for as big a date range as you like, just make sure it overlaps with last time. Code will remove duplicate entries')),
-      h5(helpText('Save them in "CSV including balance" format on website (Liberty accounts) or CSV (Visa).')),
-      br(),
-      # Outputs on unclassified transactions 
-      tableOutput("finalBalances"),
-      br(),
-      tableOutput("unclassifiedSpendsAbove50"),
-      br(),
-      tableOutput("unclassifiedDepositsAbove50"),
-      br(),
-      tableOutput("totValueOfUnclassifiedTransns"),
-      br(),
-      plotOutput("totalBalance"),
-      br(),
-      plotOutput("totalOutgoings"),
-      br(),
-      plotOutput("spendByCategory")
-      # )
+    # SUMMARY STATS
+    tabPanel('Summary', fluid=TRUE,
+             br(),
+             h5(helpText('INSTRUCTIONS IF ADDING NEW TRANSACTIONS:')),
+             h5(helpText('Need to save four files to C:/Users/user/Downloads (TSB should automatically save to this locn); 1 x Visa, 1 x Liberty Revolving, and 2 x Liberty Table (i.e. mortgage)')),
+             h5(helpText('Save them for as big a date range as you like, just make sure it overlaps with last time. Code will remove duplicate entries')),
+             h5(helpText('Save them in "CSV including balance" format on website (Liberty accounts) or CSV (Visa).')),
+             br(),
+             # Daterange
+             textOutput('dateRange'),
+             br(),
+             # Outputs on unclassified transactions 
+             plotOutput("totalBalance"),
+             br(),
+             plotOutput("totalOutgoings_noFiltering"),
+             br(),
+             tableOutput("finalBalances"),
+             br()),
+    
+    # SPEND BY CATEGORY
+    tabPanel('Spend by category & transactions over time', fluid=TRUE,
+             sidebarLayout(
+               
+                  #+++++++++++++++
+                  # UI inputs ----
+                  #+++++++++++++++
+                  
+                  sidebarPanel(
+                    # numericInput(inputId="numEm", 
+                    #              label=h4("E monthly salary after tax:"), 
+                    #              value=10), 
+                    
+                    # Select spend category to plot
+                    radioButtons(inputId="chosenCategory", 
+                                 label=h4("Spend Category"), 
+                                 choiceNames=as.list(c('AllCategories', unique(dd$spendCategory))),
+                                 choiceValues=as.list(c('AllCategories', unique(dd$spendCategory))),
+                                 selected='AllCategories'),
+                    
+                    # If 'AllCategories' is chosen above, decide whether to exclude mortgage
+                    conditionalPanel(
+                      condition = "chosenCategory==AllCategories",
+                      radioButtons(inputId="excludeMortgage", 
+                                   label=h4("Exclude mortgage payments from plots?"), 
+                                   choiceNames=list('Yes', 'No'),
+                                   choiceValues=list('Yes', 'No'),
+                                   selected='Yes')),
+                    
+                    # Select month to plot
+                    radioButtons(inputId="chosenMonth", 
+                                 label=h4("Month"), 
+                                 choiceNames=as.list(c('All Months', as.character(unique(dd$month)))),
+                                 choiceValues=as.list(c('All Months', as.character(unique(dd$month)))),
+                                 selected='All Months')
+                  ),
+                  
+                  #+++++++++++++++
+                  # UI plot and table positions ----
+                  #+++++++++++++++
+                  
+                  mainPanel(
+                    plotOutput("totalOutgoings_categoryFiltering"),
+                    br(),
+                    plotOutput("spendByCategory"),
+                    br(),
+                    plotOutput("spendOverTime"),
+                    br(),
+                    tableOutput("filteredTransactions")
+                  )
+                )
+    ),
+    
+    # SUMMARY OF UNCLASSIFIED TRANSACTIONS
+    tabPanel('Unclassified transactions', fluid=TRUE,
+             sidebarLayout(
+               sidebarPanel(
+                 # Select month to plot
+                 radioButtons(inputId="chosenMonth2", 
+                              label=h4("Month"), 
+                              choiceNames=as.list(c('All Months', as.character(unique(dd$month)))),
+                              choiceValues=as.list(c('All Months', as.character(unique(dd$month)))),
+                              selected='All Months')
+               ),
+               mainPanel(tableOutput("totValueOfUnclassifiedTransns"),
+                         br(),
+                         tableOutput("unclassifiedSpendsAbove50"),
+                         br(),
+                         tableOutput("unclassifiedDepositsAbove50"),
+                         br(),
+                         tableOutput("allUnclassifiedTransactions"),
+                         br()
+               )
+             )
     )
   )
 )
-
 #__________________________________________________________________________________________________________________________________
 
 # Define outputs ----
@@ -256,76 +296,16 @@ ui <- fluidPage(
 
 server <- function(input, output) {
   
-  #+++++++++++++++
-  # Final balances table
-  #+++++++++++++++
+  #__________________________________________________________________________________________________________________________________
   
-  output$finalBalances <- renderTable({
-    dd %>%
-      filter(acc!='visa') %>%
-      rename(Account=acc) %>%
-      group_by(Account) %>%
-      arrange(Date) %>%
-      filter(row_number()==n()) %>%
-      select(Account, Balance)
-  },
-  caption=paste('Final balances as at', as.character(max(format(dd$Date, '%d %b')))),
-  striped=TRUE,
-  caption.placement="top") # NB see xtable options for things like caption
+  # Summary tab outputs ----
+  #__________________________________________________________________________________________________________________________________
   
   #+++++++++++++++
-  # Tables of unclassified transactions valuing >$50
+  # Daterange
   #+++++++++++++++
   
-  output$unclassifiedSpendsAbove50 <- renderTable({
-    dd %>%
-      filter(spendCategory=='Other' & Amount < -50) %>%
-      rename(Account=acc) %>%
-      mutate(Date=as.character(Date)) %>%
-      select(Date, Amount, Description, Account) %>%
-      arrange(Amount)
-  },
-  caption='Unclassified spends over $50',
-  striped=TRUE,
-  caption.placement="top") # NB see xtable options for things like caption
-  
-  output$unclassifiedDepositsAbove50 <- renderTable({
-    dd %>%
-      filter(spendCategory=='Other' & Amount >50) %>%
-      rename(Account=acc) %>%
-      mutate(Date=as.character(Date)) %>%
-      select(Date, Amount, Description, Account) %>%
-      arrange(Amount)
-  },
-  caption='Unclassified deposits over $50',
-  striped=TRUE,
-  caption.placement="top") # NB see xtable options for things like caption
-  
-  #+++++++++++++++
-  # Table with info on total value of unclassified transactions
-  #+++++++++++++++
-  
-  output$totValueOfUnclassifiedTransns <- renderTable({
-    bind_rows(dd %>%
-                filter(spendCategory=='Other' & Amount < 0) %>%
-                summarise(Type='Withdrawals', 
-                          NumOfTransactions=nrow(.),
-                          Amount=sum(Amount)),
-              dd %>%
-                filter(spendCategory=='Other' & Amount > 0) %>%
-                summarise(Type='Deposits', 
-                          NumOfTransactions=nrow(.),
-                          Amount=sum(Amount))
-    )
-    # unclassifiedDeposits <- dd %>%
-    #   filter(spendCategory=='Other' & Amount > 0)
-    # paste0(nrow(unclassifiedSpends), 'withdrawals constituting', round(sum(unclassifiedSpends$Amount), 0), 'dollars unaccounted for\n', 
-    #        nrow(unclassifiedDeposits), 'deposits constituting', round(sum(unclassifiedDeposits$Amount), 0), 'dollars unaccounted for\n')
-  },
-  caption='Total value of unclassified ("Other") transactions',
-  striped=TRUE,
-  caption.placement="top") # NB see xtable options for things like caption
-  
+  output$dateRange <- renderText({paste('Data current to', as.character(max(dd$Date)))})
   
   #+++++++++++++++
   # Plot total balance (deposits minus withdrawals)
@@ -346,7 +326,7 @@ server <- function(input, output) {
   # Plot total outgoings
   #+++++++++++++++
   
-  output$totalOutgoings <- renderPlot({
+  output$totalOutgoings_noFiltering <- renderPlot({
     dd %>%
       group_by(month) %>%
       filter(Amount<0) %>%
@@ -357,28 +337,80 @@ server <- function(input, output) {
   })
   
   #+++++++++++++++
-  # Plot of spend by category
+  # Final balances table
+  #+++++++++++++++
+  
+  output$finalBalances <- renderTable({
+    dd %>%
+      filter(acc!='visa') %>%
+      rename(Account=acc) %>%
+      group_by(Account) %>%
+      arrange(Date) %>%
+      filter(row_number()==n()) %>%
+      select(Account, Balance)
+  },
+  caption=paste('Final balances as at', as.character(max(dd$Date, '%d %b'))),
+  striped=TRUE,
+  caption.placement="top") # NB see xtable options for things like caption
+
+  #__________________________________________________________________________________________________________________________________
+  
+  # Spend by category tab ----
+  #__________________________________________________________________________________________________________________________________
+  
+  #+++++++++++++++
+  # For all plots in this section filter to exclude deposits, then make spends positive
+  #+++++++++++++++
+  
+  spendsdf <- dd %>%
+    filter(Amount<0) %>%
+    mutate(Amount=-1*round(Amount, 0))
+  
+  #+++++++++++++++
+  # Plot total outgoings, filterable by category and mortgage y/n
+  #+++++++++++++++
+  
+  output$totalOutgoings_categoryFiltering <- renderPlot({
+
+  
+    # Filter down based on dashboard inputs
+    if(input$chosenCategory=='AllCategories' & input$excludeMortgage=='No') {
+      plotdf <- spendsdf
+    } else if(input$chosenCategory=='AllCategories' & input$excludeMortgage=='Yes') {
+      plotdf <- filter(spendsdf, !grepl('Mortgage', spendCategory))
+    } else if(input$chosenCategory!='AllCategories' & input$excludeMortgage=='No') {
+      plotdf <- filter(spendsdf, spendCategory==input$chosenCategory)
+    } else if(input$chosenCategory!='AllCategories' & input$excludeMortgage=='Yes') {
+      plotdf <- filter(spendsdf, spendCategory==input$chosenCategory & !grepl('Mortgage', spendCategory))
+    }
+
+    # Plot
+    plotdf %>%
+      group_by(month) %>%
+      summarise(Amount=round(sum(Amount), 0)) %>%
+      ggplot(aes(month, Amount)) + geom_bar(stat='identity', fill='#F8766D') + 
+      geom_text(aes(label=Amount)) + 
+      xlab("") + ylab("Monthly balance ($)") + ggtitle(paste('Total spend per month:', input$chosenCategory))
+  })
+  
+  #+++++++++++++++
+  # Plot of spend by category, filterable by month and mortgage y/n
   #+++++++++++++++
   
   output$spendByCategory <- renderPlot({
-
-    # Filter down based on dashboard inputs - could make reactive for all remaining plots?
-    if(input$chosenMonth=='All Months' & input$excludeMortgage=='No') {
-      plotdf <- dd
-    } else if(input$chosenMonth=='All Months' & input$excludeMortgage=='Yes') {
-      plotdf <- filter(dd, !grepl('Mortgage', spendCategory))
-    } else if(input$chosenMonth!='All Months' & input$excludeMortgage=='No') {
-      plotdf <- filter(dd, month==input$chosenMonth)
-    } else if(input$chosenMonth!='All Months' & input$excludeMortgage=='Yes') {
-      plotdf <- filter(dd, month==input$chosenMonth & !grepl('Mortgage', spendCategory))
-    }
-  
-    # For remaining plots exclude pay and any unclassified transactions that show up as 'Other', then make withdrawals +ve
-    plotdf <- plotdf %>%
-      filter(Amount<0) %>%
-      mutate(Amount=-1*round(Amount, 0))
     
-    # Spends by category
+    # Filter down based on dashboard inputs
+    if(input$chosenMonth=='All Months' & input$excludeMortgage=='No') {
+      plotdf <- spendsdf
+    } else if(input$chosenMonth=='All Months' & input$excludeMortgage=='Yes') {
+      plotdf <- filter(spendsdf, !grepl('Mortgage', spendCategory))
+    } else if(input$chosenMonth!='All Months' & input$excludeMortgage=='No') {
+      plotdf <- filter(spendsdf, month==input$chosenMonth)
+    } else if(input$chosenMonth!='All Months' & input$excludeMortgage=='Yes') {
+      plotdf <- filter(spendsdf, month==input$chosenMonth & !grepl('Mortgage', spendCategory))
+    }
+    
+    # Plot
     plotdf %>%
       group_by(spendCategory) %>%
       summarise(Amount=sum(Amount)) %>%
@@ -390,63 +422,122 @@ server <- function(input, output) {
       theme(legend.position="none") + ggtitle(paste('Spend by category:', input$chosenMonth)) +
       coord_flip()
   })
+
+  #+++++++++++++++
+  # Plot of spend over time, filterable by month, category, and mortgage y/n
+  #+++++++++++++++
+
+  output$spendOverTime <- renderPlot({
+    
+    # Filter down based on dashboard inputs
+    if(input$chosenMonth=='All Months') plotdf1 <- spendsdf else plotdf1 <- filter(spendsdf, month==input$chosenMonth)
+    if(input$excludeMortgage=='No') plotdf2 <- plotdf1 else plotdf2 <- filter(plotdf1, !grepl('Mortgage', spendCategory))
+    if(input$chosenCategory=='AllCategories') plotdf3 <- plotdf2 else plotdf3 <- filter(plotdf2, spendCategory==input$chosenCategory)
+    
+    # Plot
+    plotdf3 %>%
+      group_by(Date) %>%
+      summarise(Amount=sum(Amount)) %>%
+      ggplot(aes(Date, Amount)) + geom_line(colour='#F8766D') + 
+      ggtitle(paste('Spend over time by month and category:', input$chosenMonth, input$chosenCategory))
+  })
   
-  # # Report savings based on current params
-  # output$savings <- renderText({
-  #   mortgagePayments <- ifelse(input$radio==1, mortgageCurrent,
-  #                              ifelse(input$radio==2, mortgageInterestOnly,
-  #                                     input$mortgageOther))
-  #   paste0("Savings per month under current inputs: $", input$numEm + input$numJay - input$numOut - mortgagePayments)
-  # })
-  # 
-  # # Report Emily earnings required to break even
-  # output$earnings <- renderText({
-  #   mortgagePayments <- ifelse(input$radio==1, mortgageCurrent,
-  #                              ifelse(input$radio==2, mortgageInterestOnly,
-  #                                     input$mortgageOther))
-  #   paste0("Emily salary required to break even: $",
-  #          input$numEm + -1*(input$numEm + input$numJay - input$numOut - mortgagePayments))
-  # })
-  # 
-  # # Report outgoings required to break even
-  # output$outgoings <- renderText({
-  #   mortgagePayments <- ifelse(input$radio==1, mortgageCurrent,
-  #                              ifelse(input$radio==2, mortgageInterestOnly,
-  #                                     input$mortgageOther))
-  #   paste0("Maximum outgoings required to break even: $",
-  #          input$numOut + input$numEm + input$numJay - input$numOut - mortgagePayments)
-  # })
-  # 
-  # # Graph of savings against wide range of param values
-  # output$plot1 <- renderPlot({
-  #   
-  #   mortgagePayments <- ifelse(input$radio==1, mortgageCurrent,
-  #                              ifelse(input$radio==2, mortgageInterestOnly,
-  #                                     input$mortgageOther))
-  # 
-  #   # Plot changing e salary and j salary for constant mortgage repayment
-  #   currentSavings <- input$numEm + input$numJay - mortgagePayments - input$numOut # to plot current inputs on plot
-  #   jaySalVec <- c(input$numJay_4d, input$numJay)
-  #   if(input$numEm==0) emSalVec <- seq(from=0, to=1.5, by=0.05) # need ifelse to avoid error in seq() when numEm==0
-  #   if(input$numEm!=0) emSalVec <- c(seq(from=0, to=1.5*input$numEm, by=50), input$numEm) # adding input$numEm allows me to highlight current parameter values
-  # 
-  #   plotdf <- expand.grid(jaySalVec=jaySalVec, emSalVec=emSalVec)
-  #   plotdf <- plotdf %>%
-  #     mutate(mortgagePayments=mortgagePayments) %>%
-  #     mutate(savings=jaySalVec + emSalVec - input$numOut - mortgagePayments) %>%
-  #     mutate(`Jay's Salary`=ifelse(jaySalVec==input$numJay_4d, 'Jay salary 4d pw', 'Jay full salary'))
-  # 
-  #            ggplot(plotdf, aes(emSalVec, savings, colour=`Jay's Salary`)) +
-  #              # show breaking even as a horiz line
-  #              geom_abline(slope=0, intercept=0, colour='grey') +
-  #              geom_line() +
-  #              xlab("Emily's salary") + ylab("Savings") + ggtitle("Savings per month under changes to Emily's salary") +
-  #              # add a point giving currwent param values
-  #              geom_point(x=input$numEm, y=currentSavings, size=10, alpha=0.1, shape=1, colour='black') +
-  #              annotate("text", x=input$numEm, y=currentSavings, label="Current inputs", vjust=3, hjust=-0.25) +
-  #              theme(text=element_text(size=15))
-  #            
-  # })
+  #+++++++++++++++
+  # Table of transactions, filterable by month, category, and mortgage y/n
+  #+++++++++++++++
+  
+  output$filteredTransactions <- renderTable({
+    
+    # Filter down based on dashboard inputs
+    if(input$chosenMonth=='All Months') tabledf1 <- spendsdf else tabledf1 <- filter(spendsdf, month==input$chosenMonth)
+    if(input$excludeMortgage=='No') tabledf2 <- tabledf1 else tabledf2 <- filter(tabledf1, !grepl('Mortgage', spendCategory))
+    if(input$chosenCategory=='AllCategories') tabledf3 <- tabledf2 else tabledf3 <- filter(tabledf2, spendCategory==input$chosenCategory)
+    
+    # Plot
+    tabledf3 %>%
+      arrange(Date) %>%
+      rename(Account=acc) %>%
+      mutate(Date=as.character(Date)) %>%
+      select(Date, Amount, Description, Account)
+  },
+  caption='All transactions for filtered options',
+  striped=TRUE,
+  caption.placement="top") # NB see xtable options for things like caption)
+  
+  #__________________________________________________________________________________________________________________________________
+  
+  # Unclassified transactions tab ----
+  #__________________________________________________________________________________________________________________________________
+  
+  #+++++++++++++++
+  # Tables of unclassified transactions valuing >$50
+  #+++++++++++++++
+  
+  # Filter down based on inputs for next few tables
+  tabledfFun <- reactive({
+    if(input$chosenMonth2=='All Months') {
+      dd 
+    } else {
+      filter(dd, month==input$chosenMonth2)
+    }
+  })
+  
+  output$unclassifiedSpendsAbove50 <- renderTable({
+    tabledfFun() %>%
+      filter(spendCategory=='Other' & Amount < -50) %>%
+      rename(Account=acc) %>%
+      mutate(Date=as.character(Date)) %>%
+      select(Date, Amount, Description, Account) %>%
+      arrange(Amount)
+  },
+  caption='Unclassified spends over $50',
+  striped=TRUE,
+  caption.placement="top") # NB see xtable options for things like caption
+  
+  output$unclassifiedDepositsAbove50 <- renderTable({
+    tabledfFun() %>%
+      filter(spendCategory=='Other' & Amount >50) %>%
+      rename(Account=acc) %>%
+      mutate(Date=as.character(Date)) %>%
+      select(Date, Amount, Description, Account) %>%
+      arrange(Amount)
+  },
+  caption='Unclassified deposits over $50',
+  striped=TRUE,
+  caption.placement="top") # NB see xtable options for things like caption
+  
+  output$allUnclassifiedTransactions <- renderTable({
+    tabledfFun() %>%
+      filter(spendCategory=='Other') %>%
+      rename(Account=acc) %>%
+      mutate(Date=as.character(Date)) %>%
+      select(Date, Amount, Description, Account) %>%
+      arrange(Amount)
+  },
+  caption='All unclassified transactions',
+  striped=TRUE,
+  caption.placement="top") # NB see xtable options for things like caption
+  
+  #+++++++++++++++
+  # Table with info on total value of unclassified transactions
+  #+++++++++++++++
+  
+  output$totValueOfUnclassifiedTransns <- renderTable({
+    bind_rows(tabledfFun() %>%
+                filter(spendCategory=='Other' & Amount < 0) %>%
+                summarise(Type='Withdrawals', 
+                          NumOfTransactions=nrow(.),
+                          Amount=sum(Amount)),
+              tabledfFun() %>%
+                filter(spendCategory=='Other' & Amount > 0) %>%
+                summarise(Type='Deposits', 
+                          NumOfTransactions=nrow(.),
+                          Amount=sum(Amount))
+    )
+  },
+  caption='Total value of unclassified ("Other") transactions',
+  striped=TRUE,
+  caption.placement="top") # NB see xtable options for things like caption
 }
 
 #__________________________________________________________________________________________________________________________________
