@@ -26,38 +26,38 @@ ui <- fluidPage(
     # SPEND BY CATEGORY
     tabPanel('Spend by category', fluid=TRUE,
              sidebarLayout(
-               
+
                #+++++++++++++++
                # UI inputs ----
                #+++++++++++++++
-               
+
                sidebarPanel(
                  # Select month to plot
-                 radioButtons(inputId="chosenMonth", 
-                              label=h4("Month"), 
+                 radioButtons(inputId="chosenMonth",
+                              label=h4("Month"),
                               choiceNames=as.list(c('All Months', rev(as.character(unique(dd$month))))),
                               choiceValues=as.list(c('All Months', rev(as.character(unique(dd$month))))),
                               selected='All Months'),
-                 
+
                  # If 'AllCategories' is chosen above, decide whether to exclude mortgage
                  radioButtons(inputId="excludeMortgage",
                               label=h4("Exclude mortgage payments from plots?"),
                               choiceNames=list('Yes', 'No'),
                               choiceValues=list('Yes', 'No'),
                               selected='Yes'),
-                 
+
                  # Select spend category to plot
-                 radioButtons(inputId="chosenCategory", 
-                              label=h4("Spend Category"), 
+                 radioButtons(inputId="chosenCategory",
+                              label=h4("Spend Category"),
                               choiceNames=as.list(c('AllCategories', unique(dd$spendCategory))),
                                 choiceValues=as.list(c('AllCategories', unique(dd$spendCategory))),
                                 selected='AllCategories')
                ),
-               
+
                #+++++++++++++++
                # UI plot and table positions ----
                #+++++++++++++++
-               
+
                mainPanel(
                  plotOutput("spendByCategory"),
                  br(),
@@ -70,7 +70,7 @@ ui <- fluidPage(
                )
              )
     ),
-    
+
     # PAY AND DEPOSITS
     tabPanel('Pay', fluid=TRUE,
              sidebarLayout(

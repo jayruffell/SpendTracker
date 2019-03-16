@@ -10,8 +10,8 @@
 #__________________________________________________________________________________________________________________________________
 
 # Specify data path - where downloaded trans data gets saved, and prev data gets read in from. NOTE SHINY NEEDS RELATIVE PATHS FROM THE APP WORKING DIR IF GETTING PUBLISHED TO SERVER.  
-dataPath <- 'C:/Users/user/Documents/JAMES/SpendTracker/SpendTracker_ShinyApp/pastTransactionsData/' # local version
-# dataPath <- 'pastTransactionsData/' # server version
+# dataPath <- 'C:/Users/user/Documents/JAMES/SpendTracker/SpendTracker_ShinyApp/pastTransactionsData/' # local version
+dataPath <- 'pastTransactionsData/' # server version
 
 suppressMessages(library(dplyr))
 suppressMessages(library(ggplot2))
