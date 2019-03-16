@@ -40,20 +40,18 @@ ui <- fluidPage(
                               selected='All Months'),
                  
                  # If 'AllCategories' is chosen above, decide whether to exclude mortgage
-                 conditionalPanel(
-                   condition = "chosenCategory==AllCategories",
-                   radioButtons(inputId="excludeMortgage",
-                                label=h4("Exclude mortgage payments from plots?"),
-                                choiceNames=list('Yes', 'No'),
-                                choiceValues=list('Yes', 'No'),
-                                selected='Yes'),
-                   
-                   # Select spend category to plot
-                   radioButtons(inputId="chosenCategory", 
-                                label=h4("Spend Category"), 
-                                choiceNames=as.list(c('AllCategories', unique(dd$spendCategory))),
+                 radioButtons(inputId="excludeMortgage",
+                              label=h4("Exclude mortgage payments from plots?"),
+                              choiceNames=list('Yes', 'No'),
+                              choiceValues=list('Yes', 'No'),
+                              selected='Yes'),
+                 
+                 # Select spend category to plot
+                 radioButtons(inputId="chosenCategory", 
+                              label=h4("Spend Category"), 
+                              choiceNames=as.list(c('AllCategories', unique(dd$spendCategory))),
                                 choiceValues=as.list(c('AllCategories', unique(dd$spendCategory))),
-                                selected='AllCategories'))
+                                selected='AllCategories')
                ),
                
                #+++++++++++++++
@@ -61,9 +59,9 @@ ui <- fluidPage(
                #+++++++++++++++
                
                mainPanel(
-                 plotOutput("totalOutgoings_categoryFiltering"),
-                 br(),
                  plotOutput("spendByCategory"),
+                 br(),
+                 plotOutput("totalOutgoings_categoryFiltering"),
                  br(),
                  plotOutput("spendOverTime", click='plot_click'),
                  tableOutput("spendOverTimeInfo"), # for clicking on plot and returning output
