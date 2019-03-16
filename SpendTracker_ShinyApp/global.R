@@ -9,9 +9,7 @@
 # Set params & load packages ----
 #__________________________________________________________________________________________________________________________________
 
-rm(list=ls())
-downloadsPath <- 'C:/Users/user/Downloads/' # where statements get saved
-dataPath <- 'C:/Users/user/Documents/JAMES/SpendTracker/pastTransactionsData/' # where downloaded trans data gets saved, and prev data gets read in from
+dataPath <- 'pastTransactionsData/' # where downloaded trans data gets saved, and prev data gets read in from. NOTE SHINY NEEDS RELATIVE PATHS FROM THE APP WORKING DIR.
 
 suppressMessages(library(dplyr))
 suppressMessages(library(ggplot2))
@@ -24,33 +22,11 @@ library(shiny)
 #__________________________________________________________________________________________________________________________________
 
 #+++++++++++++++
-# Read data in from downloads folder if it exists
+# Read in all transactions and dedupe
 #+++++++++++++++
 
-tsbfiles <- list.files(downloadsPath)[grepl('[Tt][Ss][Bb]', list.files(downloadsPath))]
-
-if(length(tsbfiles)>0){
-  
-  # Read in new downloaded data, inc. automatically saving to dataPath
-  newList <- lapply(tsbfiles, function(x) {
-    trans <- read.csv(paste0(downloadsPath, x), stringsAsFactors = FALSE)
-    write.csv(trans, paste0(dataPath, x), row.names=FALSE)
-    if(grepl('4548670363823106', x)) trans <- mutate(trans, acc='visa')
-    if(grepl('70015100640', x)) trans <- mutate(trans, acc='mortgage1')
-    if(grepl('70015100641', x)) trans <- mutate(trans, acc='mortgage2')
-    if(grepl('70015100647', x)) trans <- mutate(trans, acc='revolving')
-    return(trans)
-  })
-  newDF <- bind_rows(newList)
-  newDF <- as.tbl(newDF)
-}
-
-#+++++++++++++++
-# Read in historic data, bind to new data, and dedupe
-#+++++++++++++++
-
-oldtsbfiles <- list.files(dataPath)[grepl('[Tt][Ss][Bb]', list.files(dataPath))]
-
+oldtsbfiles <- list.files(dataPath)[grepl('[Tt][Ss][Bb]', list.files(dataPath))] # calling 'old' cos I used to read new files in from different locn, but Shiny didn't like this.
+dataPath
 oldList <- lapply(oldtsbfiles, function(x) {
   trans <- read.csv(paste0(dataPath, x), stringsAsFactors = FALSE)
   if(grepl('4548670363823106', x)) trans <- mutate(trans, acc='visa')
@@ -62,27 +38,20 @@ oldList <- lapply(oldtsbfiles, function(x) {
 oldDF <- bind_rows(oldList)
 oldDF <- as.tbl(oldDF)
 
-# Bind to new
-if(exists("newDF")){ 
-  dd <- bind_rows(newDF, oldDF)
-} else {
-  dd <- oldDF
-}
+# Set date properly
+oldDF$Date <- as.Date(oldDF$Date, format='%d/%m/%y')
 
 # Dedupe, after first finding any 'true' duplicates (i.e. actual transactions with same account, date, amount etc), as these will get removed by distinct() below. Vs 'False duplicates', which are just rows that are getting removed cos of overlapping dates between new and old data. True dupes will get printed to dash as a warning
 trueDupes <- oldDF[duplicated(oldDF),]
-if(exists("newDF")) trueDupes <- bind_rows(trueDupes, newDF[duplicated(newDF),])
 trueDupes <- trueDupes %>%
-  transmute(Date=Date, Amount=Amount, Description=Amount, Account=acc) %>% # prettifying for shiny, and adding month for reactive filtering
-  mutate(month=format(as.Date(Date, format='%d/%m/%y'), '%b %Y'))
-dd <- distinct(dd)
+  select(Date, Amount, Description, acc) %>%
+  rename(Account=acc) %>% # prettifying for shiny, and adding month for reactive filtering
+  mutate(month=format(Date, '%b %Y'))
+dd <- distinct(oldDF)
 
 #+++++++++++++++
 # Data formatting/cleaning
 #+++++++++++++++
-
-# Set date properly
-dd$Date <- as.Date(dd$Date, format='%d/%m/%y')
 
 # Exclude initial massive deposits/transfers from Westpac following loan & revolving credit restructuring - will massively skew earnings etc
 dd <- dd %>%
@@ -91,9 +60,9 @@ dd <- dd %>%
   filter(round(Amount,0)!=24536) %>%
   filter(round(Amount,0)!=-24536) %>%
   filter(round(Amount,0)!=14541) %>%
-  filter(round(Amount,0)!=-14541) %>% # transfers from revolving into loan accounts (show up in both) during loan restructure 
+  filter(round(Amount,0)!=-14541) %>% # transfers from revolving into loan accounts (show up in both) during loan restructure
   filter(round(Amount,0)!=5300) %>% # reward for switching to TSB
-  filter(round(Amount,0)!=10000) %>% 
+  filter(round(Amount,0)!=10000) %>%
   filter(round(Amount,0)!=27339) %>% # transfers of savings from Westpac
   filter(round(Amount,0)!=28737) %>% # not sure what this one is! Extra $ from loan restructure, deposited from lawyer I believe.
   filter(round(Amount,0)!=28737) # not sure what this one is! Extra $ from loan restructure, deposited from lawyer I believe.
@@ -118,15 +87,15 @@ dd <- dd %>%
   mutate(
     spendCategory=
       # Pay
-      ifelse((grepl('ANNALECT|50119ACC|MINISTRY OF|TAX FAM31', Description) & Amount > 0), 'Pay&GovnContributions', 
-             
+      ifelse((grepl('ANNALECT|50119ACC|MINISTRY OF|TAX FAM31', Description) & Amount > 0), 'Pay&GovnContributions',
+
              # Mortgage & bank fees
              ifelse(grepl('SERVICE FEE|CARD REISSUE FE|ACCOUNT FEE', Description), 'BankFees',
                     ifelse(grepl('LOAN/EQUITY', Particulars), 'MortgagePrincipal',
                            ifelse(grepl('LOAN INTEREST', Description), 'MortgageInterest',
-                                  
+
                                   # Everything else
-                                  ifelse(grepl('COUNT ?DOWN|NEW ?WORLD|SAFFRON|EAT ?ME', Description), 'Groceries', 
+                                  ifelse(grepl('COUNT ?DOWN|NEW ?WORLD|SAFFRON|EAT ?ME', Description), 'Groceries',
                                          ifelse(grepl('BURGER|DOMINOS|WENDY|MCDONALDS|KEBAB', Description), 'FastFood',
                                                 ifelse(grepl('CAFE|DEAR JERVOIS|SUSHI|BAKERY|BISTRO|RESTAURANT|SUGARGRILL|STARK|1929', Description), 'Cafes&EatingOut',
                                                        ifelse(grepl('Z TE AT|CAR ?PARK|VTNZ|BP|TRANSPORT', Description), 'Car',

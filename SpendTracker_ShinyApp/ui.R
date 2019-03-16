@@ -10,7 +10,7 @@ ui <- fluidPage(
     tabPanel('Summary', fluid=TRUE,
              br(),
              h5(helpText('INSTRUCTIONS IF ADDING NEW TRANSACTIONS:')),
-             h5(helpText('- Need to save four files to C:/Users/user/Downloads (TSB should automatically save to this locn); 1 x Visa, 1 x Liberty Revolving, and 2 x Liberty Table (i.e. mortgage)')),
+             h5(helpText('- Need to save four files to Documents/JAMES/SpendTracker/SpendTracker_ShinyApp/pastTransactionsData; 1 x Visa, 1 x Liberty Revolving, and 2 x Liberty Table (i.e. mortgage)')),
              h5(helpText('- Save them for as big a date range as you like, just make sure it overlaps with last time. Dashboard will remove duplicate entries')),
              h5(helpText('- Save them in "CSV including balance" format on website (Liberty accounts) or CSV (Visa).')),
              h5(helpText('- Dashboard will automatically upload new files if they exist in the above folder.')),
