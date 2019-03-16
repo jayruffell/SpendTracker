@@ -9,8 +9,9 @@
 # Set params & load packages ----
 #__________________________________________________________________________________________________________________________________
 
-# dataPath <- 'C:/Users/user/Documents/JAMES/SpendTracker/SpendTracker_ShinyApp/pastTransactionsData/'
-dataPath <- 'pastTransactionsData/' # where downloaded trans data gets saved, and prev data gets read in from. NOTE SHINY NEEDS RELATIVE PATHS FROM THE APP WORKING DIR.
+# Specify data path - where downloaded trans data gets saved, and prev data gets read in from. NOTE SHINY NEEDS RELATIVE PATHS FROM THE APP WORKING DIR IF GETTING PUBLISHED TO SERVER.  
+dataPath <- 'C:/Users/user/Documents/JAMES/SpendTracker/SpendTracker_ShinyApp/pastTransactionsData/' # local version
+# dataPath <- 'pastTransactionsData/' # server version
 
 suppressMessages(library(dplyr))
 suppressMessages(library(ggplot2))
@@ -90,7 +91,8 @@ dd <- dd %>%
   mutate(
     spendCategory=
       # Pay
-      ifelse((grepl('ANNALECT|50119ACC|MINISTRY OF|TAX FAM31', Description) & Amount > 0), 'Pay&GovnContributions',
+      ifelse((grepl('ANNALECT|50119ACC|MINISTRY OF|TAX FAM31', Description) & Amount > 0) |
+               (grepl('RUFFELL', Description) & grepl('ACC', Description) & Amount > 0), 'Pay&GovnContributions',
 
              # Mortgage & bank fees
              ifelse(grepl('SERVICE FEE|CARD REISSUE FE|ACCOUNT FEE', Description), 'BankFees',
@@ -98,27 +100,43 @@ dd <- dd %>%
                            ifelse(grepl('LOAN INTEREST', Description), 'MortgageInterest',
 
                                   # Everything else
-                                  ifelse(grepl('COUNT ?DOWN|NEW ?WORLD|SAFFRON|EAT ?ME', Description), 'Groceries',
-                                         ifelse(grepl('BURGER|DOMINOS|WENDY|MCDONALDS|KEBAB', Description), 'FastFood',
-                                                ifelse(grepl('CAFE|DEAR JERVOIS|SUSHI|BAKERY|BISTRO|RESTAURANT|SUGARGRILL|STARK|1929', Description), 'Cafes&EatingOut',
-                                                       ifelse(grepl('Z TE AT|CAR ?PARK|VTNZ|BP|TRANSPORT', Description), 'Car',
-                                                              ifelse(grepl('BABY|MOCKA', Description), 'Baby',
-                                                                     ifelse(grepl('MITRE|HAMMER|KINGS|CITTA|FREEDOM FURNITURE|HOMESTEAD PICTURE|SPOTLIGHT|STORAGE ?BOX', Description), 'Home&Garden',
-                                                                            ifelse(grepl('WATERCARE|SLINGSHOT|SKINNY|AKL COUNCIL', Description), 'Utilities',
+                                  ifelse(grepl('FARRO|COUNT ?DOWN|PAK ?N ?SAVE|NEW ?WORLD|SAFFRON|EAT ?ME', Description), 'Groceries',
+                                                ifelse(grepl('SAAN|CAFE|DEAR JERVOIS|SUSHI|BAKERY|BISTRO|RESTAURANT|SUGARGRILL|STARK|1929|GOOD ?HOME|BEER ?BREW|DELI|MR ?ILLINGSWORTH|LIQUOR|KREEM', Description), 'CafesAlcohol&EatingOut',
+                                                       ifelse(grepl('Z TE AT|CAR ?PARK|VTNZ|BP|TRANSPORT|CYCLES', Description), 'Transport',
+                                                              ifelse(grepl('BABY|MOCKA|H ?& ?M|BAND ?OF ?BOYS|KID ?REPUBLIC|THE ?SLEEP ?STORE|ALYCE|G4U ?DOLLAR ?STORE|COTTON ?ON|WHITCOULLS', Description), 'Baby',
+                                                                     ifelse(grepl('MITRE|HAMMER|KINGS|CITTA|FREEDOM FURNITURE|HOMESTEAD PICTURE|SPOTLIGHT|STORAGE ?BOX|CARPET ?CLEAN|KODAK|REFUSE ?STATION', Description), 'Home&Garden',
+                                                                            ifelse(grepl('WATERCARE|SLINGSHOT|SKINNY|AKL COUNCIL|MERIDIAN', Description), 'Utilities',
                                                                                    ifelse(grepl('PHARMACY|HEALTH NEW LYNN|PROACTIVE|ASTERON', Description), 'Health',
-                                                                                          ifelse(grepl('NETFLIX|MOVIES|CINEMA', Description), 'Entertainment',
-                                                                                                 'Other'))))))))))))))
+                                                                                          ifelse(grepl('POP-UP ?GLOBE|NETFLIX|MOVIES|CINEMA', Description), 'Entertainment',
+                                                                                                 'Other')))))))))))))
 dd <- dd %>%
   mutate(
     spendCategory=
-      ifelse(grepl('RODNEY ?WAYNE|HUE|ZARA|MOOCHI|SISTERS AND CO|KATHRYN ?WILSON|STITCHES|HAIRDRESS|KSUBI|THE ?SLEEP ?STORE', Description) |
+      ifelse(grepl('RODNEY ?WAYNE|CACI|HUE|ZARA|MOOCHI|SISTERS AND CO|KATHRYN ?WILSON|STITCHES|HAIRDRESS|KSUBI|KATIE ?AND ?LINA ?NAILS|MECCA|BRAS ?N ?THINGS', Description) |
                (grepl('SUPERETTE', Description) & Amount < -50), # separates superette store from dairies.
              'EmilyClothes&Beauty',
-             ifelse(grepl('S A F E', Description), 'Charity',
+             ifelse(grepl('BURGER|DOMINOS|WENDY|MCDONALDS|KEBAB|SUPERETTE', Description), 'FastFood',
                     ifelse(grepl('K ?-?MART|FARMERS|WAREHOUSE|TWL 187 ST LUKES', Description), 'KmartFarmersWarehouse',
                            ifelse(grepl('^MO ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ?$', Description), 'MoPayments',
-                                  spendCategory)))))
+                                  ifelse(grepl('CHARITY|FLOWERS|ELTON|S A F E', Description), 'Gifts&Charity',
+                                         spendCategory))))))
+    
+# For classfying new transactions
+dd %>%
+  # Only look at latest month, if prev months done already
+  mutate(month=format(Date, '%b %Y')) %>%
+  filter(month=='Jan 2019') %>%
+  filter(spendCategory=='Other') %>%
+  # Split 'other' into known and unknown, so Im only classifying the latter
+  mutate(
+    spendCategory=
+      ifelse(grepl('APPLE NZ|GOOGLE ?STORAGE|SURF2SURF|NZEI', Description), 'Other_known', 'Other')) %>%
+  filter(spendCategory!='Other_known') %>%
+  arrange(desc(month), Amount) %>%
+  select(-Balance, -spendCategory) %>%
+  as.data.frame()
 
+names(dd)
 #__________________________________________________________________________________________________________________________________
 
 # Create ordered factor for month, so ggplot will plot correctly ----
