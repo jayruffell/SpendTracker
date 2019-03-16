@@ -9,6 +9,7 @@
 # Set params & load packages ----
 #__________________________________________________________________________________________________________________________________
 
+# dataPath <- 'C:/Users/user/Documents/JAMES/SpendTracker/SpendTracker_ShinyApp/pastTransactionsData/'
 dataPath <- 'pastTransactionsData/' # where downloaded trans data gets saved, and prev data gets read in from. NOTE SHINY NEEDS RELATIVE PATHS FROM THE APP WORKING DIR.
 
 suppressMessages(library(dplyr))
@@ -26,13 +27,13 @@ library(shiny)
 #+++++++++++++++
 
 oldtsbfiles <- list.files(dataPath)[grepl('[Tt][Ss][Bb]', list.files(dataPath))] # calling 'old' cos I used to read new files in from different locn, but Shiny didn't like this.
-dataPath
 oldList <- lapply(oldtsbfiles, function(x) {
   trans <- read.csv(paste0(dataPath, x), stringsAsFactors = FALSE)
   if(grepl('4548670363823106', x)) trans <- mutate(trans, acc='visa')
   if(grepl('70015100640', x)) trans <- mutate(trans, acc='mortgage1')
   if(grepl('70015100641', x)) trans <- mutate(trans, acc='mortgage2')
   if(grepl('70015100647', x)) trans <- mutate(trans, acc='revolving')
+  trans$filename <- gsub(".csv", "", x)
   return(trans)
 })
 oldDF <- bind_rows(oldList)
@@ -46,7 +47,9 @@ trueDupes <- oldDF[duplicated(oldDF),]
 trueDupes <- trueDupes %>%
   select(Date, Amount, Description, acc) %>%
   rename(Account=acc) %>% # prettifying for shiny, and adding month for reactive filtering
-  mutate(month=format(Date, '%b %Y'))
+  mutate(month=format(Date, '%b %Y'),
+         Date=as.character(Date))
+oldDF <- select(oldDF, -filename) # filename was used to find 'true dupes' rather than just overlapping dateranges for different downloads from the same account.
 dd <- distinct(oldDF)
 
 #+++++++++++++++
@@ -132,4 +135,3 @@ dd <- dd %>%
   left_join(monthOrder, by='month') %>%
   arrange(Date)
 dd$month <- factor(dd$month, levels=unique(dd$month[order(dd$myorder)]), ordered=TRUE)
-

@@ -32,32 +32,28 @@ ui <- fluidPage(
                #+++++++++++++++
                
                sidebarPanel(
-                 # numericInput(inputId="numEm", 
-                 #              label=h4("E monthly salary after tax:"), 
-                 #              value=10), 
-                 
-                 # Select spend category to plot
-                 radioButtons(inputId="chosenCategory", 
-                              label=h4("Spend Category"), 
-                              choiceNames=as.list(c('AllCategories', unique(dd$spendCategory))),
-                              choiceValues=as.list(c('AllCategories', unique(dd$spendCategory))),
-                              selected='AllCategories'),
+                 # Select month to plot
+                 radioButtons(inputId="chosenMonth", 
+                              label=h4("Month"), 
+                              choiceNames=as.list(c('All Months', rev(as.character(unique(dd$month))))),
+                              choiceValues=as.list(c('All Months', rev(as.character(unique(dd$month))))),
+                              selected='All Months'),
                  
                  # If 'AllCategories' is chosen above, decide whether to exclude mortgage
                  conditionalPanel(
                    condition = "chosenCategory==AllCategories",
-                   radioButtons(inputId="excludeMortgage", 
-                                label=h4("Exclude mortgage payments from plots?"), 
+                   radioButtons(inputId="excludeMortgage",
+                                label=h4("Exclude mortgage payments from plots?"),
                                 choiceNames=list('Yes', 'No'),
                                 choiceValues=list('Yes', 'No'),
-                                selected='Yes')),
-                 
-                 # Select month to plot
-                 radioButtons(inputId="chosenMonth", 
-                              label=h4("Month"), 
-                              choiceNames=as.list(c('All Months', as.character(unique(dd$month)))),
-                              choiceValues=as.list(c('All Months', as.character(unique(dd$month)))),
-                              selected='All Months')
+                                selected='Yes'),
+                   
+                   # Select spend category to plot
+                   radioButtons(inputId="chosenCategory", 
+                                label=h4("Spend Category"), 
+                                choiceNames=as.list(c('AllCategories', unique(dd$spendCategory))),
+                                choiceValues=as.list(c('AllCategories', unique(dd$spendCategory))),
+                                selected='AllCategories'))
                ),
                
                #+++++++++++++++
@@ -90,8 +86,8 @@ ui <- fluidPage(
                  # Select month to plot
                  radioButtons(inputId="chosenMonth3",
                               label=h4("Month"),
-                              choiceNames=as.list(c('All Months', as.character(unique(dd$month)))),
-                              choiceValues=as.list(c('All Months', as.character(unique(dd$month)))),
+                              choiceNames=as.list(c('All Months', rev(as.character(unique(dd$month))))),
+                              choiceValues=as.list(c('All Months', rev(as.character(unique(dd$month))))),
                               selected='All Months')
                ),
 
@@ -119,8 +115,8 @@ ui <- fluidPage(
                  # Select month to plot
                  radioButtons(inputId="chosenMonth2", 
                               label=h4("Month"), 
-                              choiceNames=as.list(c('All Months', as.character(unique(dd$month)))),
-                              choiceValues=as.list(c('All Months', as.character(unique(dd$month)))),
+                              choiceNames=as.list(c('All Months', rev(as.character(unique(dd$month))))),
+                              choiceValues=as.list(c('All Months', rev(as.character(unique(dd$month))))),
                               selected='All Months')
                ),
                mainPanel(tableOutput("duplicatedTransns"),
