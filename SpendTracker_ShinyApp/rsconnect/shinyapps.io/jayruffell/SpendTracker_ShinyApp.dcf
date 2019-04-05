@@ -1,0 +1,12 @@
+name: SpendTracker_ShinyApp
+title: SpendTracker_ShinyApp
+username:
+account: jayruffell
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 777440
+bundleId: 1990090
+url: https://jayruffell.shinyapps.io/SpendTracker_ShinyApp/
+when: 1554494203.70304
+asMultiple: FALSE
+asStatic: FALSE

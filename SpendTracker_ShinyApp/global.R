@@ -87,6 +87,7 @@ dd <- dd %>%
 
 dd$Description <- toupper(dd$Description)
 dd$Particulars <- toupper(dd$Particulars)
+
 dd <- dd %>%
   mutate(
     spendCategory=
@@ -95,24 +96,24 @@ dd <- dd %>%
                (grepl('RUFFELL', Description) & grepl('ACC', Description) & Amount > 0), 'Pay&GovnContributions',
 
              # Mortgage & bank fees
-             ifelse(grepl('SERVICE FEE|CARD REISSUE FE|ACCOUNT FEE', Description), 'BankFees',
+             ifelse(grepl('SERVICE FEE|CARD REISSUE FE|ACCOUNT FEE|INTEREST CHARGED', Description), 'BankFees',
                     ifelse(grepl('LOAN/EQUITY', Particulars), 'MortgagePrincipal',
                            ifelse(grepl('LOAN INTEREST', Description), 'MortgageInterest',
 
                                   # Everything else
                                   ifelse(grepl('FARRO|COUNT ?DOWN|PAK ?N ?SAVE|NEW ?WORLD|SAFFRON|EAT ?ME', Description), 'Groceries',
                                                 ifelse(grepl('SAAN|CAFE|DEAR JERVOIS|SUSHI|BAKERY|BISTRO|RESTAURANT|SUGARGRILL|STARK|1929|GOOD ?HOME|BEER ?BREW|DELI|MR ?ILLINGSWORTH|LIQUOR|KREEM', Description), 'CafesAlcohol&EatingOut',
-                                                       ifelse(grepl('Z TE AT|CAR ?PARK|VTNZ|BP|TRANSPORT|CYCLES', Description), 'Transport',
+                                                       ifelse(grepl('Z TE AT|HEEM|UBER|CAR ?PARK|VTNZ|BP|TRANSPORT|CYCLES|TOURNAMENT|AT HOP', Description), 'Transport',
                                                               ifelse(grepl('BABY|MOCKA|H ?& ?M|BAND ?OF ?BOYS|KID ?REPUBLIC|THE ?SLEEP ?STORE|ALYCE|G4U ?DOLLAR ?STORE|COTTON ?ON|WHITCOULLS', Description), 'Baby',
                                                                      ifelse(grepl('MITRE|HAMMER|KINGS|CITTA|FREEDOM FURNITURE|HOMESTEAD PICTURE|SPOTLIGHT|STORAGE ?BOX|CARPET ?CLEAN|KODAK|REFUSE ?STATION', Description), 'Home&Garden',
                                                                             ifelse(grepl('WATERCARE|SLINGSHOT|SKINNY|AKL COUNCIL|MERIDIAN', Description), 'Utilities',
-                                                                                   ifelse(grepl('PHARMACY|HEALTH NEW LYNN|PROACTIVE|ASTERON', Description), 'Health',
+                                                                                   ifelse(grepl('PHARMACY|HEALTH NEW LYNN|PROACTIVE|ASTERON|PHYSIO', Description), 'Health',
                                                                                           ifelse(grepl('POP-UP ?GLOBE|NETFLIX|MOVIES|CINEMA', Description), 'Entertainment',
                                                                                                  'Other')))))))))))))
 dd <- dd %>%
   mutate(
     spendCategory=
-      ifelse(grepl('RODNEY ?WAYNE|CACI|HUE|ZARA|MOOCHI|SISTERS AND CO|KATHRYN ?WILSON|STITCHES|HAIRDRESS|KSUBI|KATIE ?AND ?LINA ?NAILS|MECCA|BRAS ?N ?THINGS', Description) |
+      ifelse(grepl('RODNEY ?WAYNE|CACI|HUE|ZARA|MOOCHI|SISTERS AND CO|KATHRYN ?WILSON|STITCHES|HAIRDRESS|KSUBI|KATIE ?AND ?LINA ?NAILS|MECCA|BRAS ?N ?THINGS|SASS & BIDE', Description) |
                (grepl('SUPERETTE', Description) & Amount < -50), # separates superette store from dairies.
              'EmilyClothes&Beauty',
              ifelse(grepl('BURGER|DOMINOS|WENDY|MCDONALDS|KEBAB|SUPERETTE', Description), 'FastFood',
@@ -125,7 +126,7 @@ dd <- dd %>%
 dd %>%
   # Only look at latest month, if prev months done already
   mutate(month=format(Date, '%b %Y')) %>%
-  filter(month=='Jan 2019') %>%
+  filter(month=='Mar 2019') %>%
   filter(spendCategory=='Other') %>%
   # Split 'other' into known and unknown, so Im only classifying the latter
   mutate(
