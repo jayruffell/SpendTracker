@@ -73,10 +73,10 @@ server <- function(input, output) {
   #+++++++++++++++
   # Plot total outgoings, filterable by category and mortgage y/n
   #+++++++++++++++
-  
+
   output$totalOutgoings_categoryFiltering <- renderPlot({
-    
-    
+
+
     # Filter down based on dashboard inputs
     if(input$chosenCategory=='AllCategories' & input$excludeMortgage=='No') {
       plotdf <- spendsdf
@@ -87,13 +87,13 @@ server <- function(input, output) {
     } else if(input$chosenCategory!='AllCategories' & input$excludeMortgage=='Yes') {
       plotdf <- filter(spendsdf, spendCategory==input$chosenCategory & !grepl('Mortgage', spendCategory))
     }
-    
+
     # Plot
     plotdf %>%
       group_by(month) %>%
       summarise(Amount=round(sum(Amount), 0)) %>%
-      ggplot(aes(month, Amount)) + geom_bar(stat='identity', fill='#F8766D') + 
-      geom_text(aes(label=Amount)) + 
+      ggplot(aes(month, Amount)) + geom_bar(stat='identity', fill='#F8766D') +
+      geom_text(aes(label=Amount)) +
       xlab("") + ylab("Monthly balance ($)") + ggtitle(paste('Total spend per month:', input$chosenCategory))
   })
   

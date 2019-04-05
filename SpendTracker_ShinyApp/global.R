@@ -80,6 +80,10 @@ dd <- dd %>%
 dd <- dd %>%
   filter(!grepl('mortgage', acc) | !grepl('Repayment', Particulars))
 
+# Remove all dates prior to Jan 2019, cos we weren't getting full data (pay and/or spend going into Westpac still)
+dd <- dd %>%
+  filter(Date>'2018-12-31')
+
 #__________________________________________________________________________________________________________________________________
 
 # Classify transactions ----
