@@ -4,7 +4,14 @@
 #__________________________________________________________________________________________________________________________________
 
 server <- function(input, output) {
+
+  #__________________________________________________________________________________________________________________________________
   
+  # First set base font size for all plots ----
+  #__________________________________________________________________________________________________________________________________
+  
+  theme_set(theme_grey(base_size = 14)) 
+    
   #__________________________________________________________________________________________________________________________________
   
   # Summary tab outputs ----
@@ -21,7 +28,7 @@ server <- function(input, output) {
       mutate(posneg=ifelse(Amount>0, 'pos', 'neg')) %>%
       ggplot(aes(month, Amount, fill=posneg)) + geom_bar(stat='identity') + 
       geom_text(aes(label=Amount)) + 
-      xlab("") + ylab("Monthly balance ($)") + 
+      xlab("") + ylab("") + 
       theme(legend.position="none") + ggtitle('Overall balance (deposits minus withdrawals) per month')
   })
   
@@ -36,7 +43,7 @@ server <- function(input, output) {
       summarise(Amount=round(sum(Amount), 0)*-1) %>%
       ggplot(aes(month, Amount)) + geom_bar(stat='identity', fill='#F8766D') + 
       geom_text(aes(label=Amount)) + 
-      xlab("") + ylab("Monthly balance ($)") + ggtitle('Total spend per month')
+      xlab("") + ylab("") + ggtitle('Total spend per month')
   })
   
   #+++++++++++++++
@@ -73,10 +80,10 @@ server <- function(input, output) {
   #+++++++++++++++
   # Plot total outgoings, filterable by category and mortgage y/n
   #+++++++++++++++
-
+  
   output$totalOutgoings_categoryFiltering <- renderPlot({
-
-
+    
+    
     # Filter down based on dashboard inputs
     if(input$chosenCategory=='AllCategories' & input$excludeMortgage=='No') {
       plotdf <- spendsdf
@@ -87,14 +94,14 @@ server <- function(input, output) {
     } else if(input$chosenCategory!='AllCategories' & input$excludeMortgage=='Yes') {
       plotdf <- filter(spendsdf, spendCategory==input$chosenCategory & !grepl('Mortgage', spendCategory))
     }
-
+    
     # Plot
     plotdf %>%
       group_by(month) %>%
       summarise(Amount=round(sum(Amount), 0)) %>%
       ggplot(aes(month, Amount)) + geom_bar(stat='identity', fill='#F8766D') +
       geom_text(aes(label=Amount)) +
-      xlab("") + ylab("Monthly balance ($)") + ggtitle(paste('Total spend per month:', input$chosenCategory))
+      xlab("") + ylab("") + ggtitle(paste('Total spend per month:', input$chosenCategory))
   })
   
   #+++++++++++++++
@@ -122,7 +129,7 @@ server <- function(input, output) {
       mutate(spendCategory=factor(spendCategory, levels=unique(spendCategory[order(Amount)]))) %>%
       ggplot(aes(spendCategory, Amount, fill=spendCategory)) + geom_bar(stat='identity') + 
       geom_text(aes(label=Amount)) + 
-      xlab("") + ylab("Category spend ($)") + 
+      xlab("") + ylab("") + 
       theme(legend.position="none") + ggtitle(paste('Spend by category:', input$chosenMonth)) +
       coord_flip()
   })
@@ -144,7 +151,7 @@ server <- function(input, output) {
   output$spendOverTime <- renderPlot({
     plotdf_spends() %>%
       ggplot(aes(Date, Amount)) + geom_point(colour='#00BFC4', alpha=0.9, size=2) + 
-      ylab("Pay ($)") + xlab("") +
+      ylab("") + xlab("") +
       ggtitle(paste('Spend over time:', input$chosenMonth, input$chosenCategory, '. Click on plot to see transactions below.'))
   })
   
@@ -179,6 +186,139 @@ server <- function(input, output) {
   caption='All transactions for filtered options',
   striped=TRUE,
   caption.placement="top") # NB see xtable options for things like caption)
+
+  #__________________________________________________________________________________________________________________________________
+  
+  # Groceries tab ----
+  #__________________________________________________________________________________________________________________________________
+  
+  output$grocerySpendsCheck <- renderPlot({
+    
+    #+++++++++++++++
+    # TEMP check groceries bill from 'gg' (groc receipts) matches up with groceries bill from 'dd' (bank statements)
+    #+++++++++++++++
+    
+    checkdf <- bind_rows(gg %>%
+                           group_by(Date) %>%
+                           summarise(Amount=sum(Amount)*-1) %>%
+                           mutate(dataSource='receipts'),
+                         dd %>%
+                           filter(Amount<0) %>% # there's an outlier where we got +$20 from countdown online. Rebate??
+                           filter(spendCategory=='Groceries') %>%
+                           mutate(dataSource=ifelse(grepl('ONLINE', Description), 
+                                                    'bankStatements_OnlineBuy', 'bankStatements_OfflineBuy')) %>%
+                           group_by(Date, dataSource) %>%
+                           summarise(Amount=sum(Amount)*-1))
+    ggplot(checkdf, aes(Date, Amount, colour=dataSource)) + geom_line() + ylab('') + xlab ("") +
+      ggtitle('Data check: does data from receipts match data from bank statements?')
+  })
+  
+  #+++++++++++++++
+  # For all plots in this section filter to exclude deposits, then make spends positive
+  #+++++++++++++++
+  
+  spendsdf_g <- gg %>%
+    mutate(Amount=-1*round(Amount, 0))
+  
+  #+++++++++++++++
+  # Plot total outgoings, filterable by category
+  #+++++++++++++++
+  
+  output$totalOutgoings_categoryFiltering_g <- renderPlot({
+    
+    
+    # Filter down based on dashboard inputs
+    if(input$chosenCategory_g=='AllCategories') {
+      plotdf <- spendsdf_g
+    } else if(input$chosenCategory_g!='AllCategories') {
+      plotdf <- filter(spendsdf_g, spendCategory==input$chosenCategory_g)
+    }
+    
+    # Plot
+    plotdf %>%
+      group_by(month) %>%
+      summarise(Amount=round(sum(Amount), 0)) %>%
+      ggplot(aes(month, Amount)) + geom_bar(stat='identity', fill='#F8766D') +
+      geom_text(aes(label=Amount)) +
+      xlab("") + ylab("") + ggtitle(paste('Total spend per month:', input$chosenCategory_g))
+  })
+  
+  #+++++++++++++++
+  # Plot of spend by category, filterable by month
+  #+++++++++++++++
+  
+  output$spendByCategory_g <- renderPlot({
+    
+    # Filter down based on dashboard inputs
+    if(input$chosenMonth_g=='All Months') {
+      plotdf <- spendsdf_g
+    } else if(input$chosenMonth_g!='All Months') {
+      plotdf <- filter(spendsdf_g, month==input$chosenMonth_g)
+    }
+    
+    # Plot
+    plotdf %>%
+      group_by(spendCategory) %>%
+      summarise(Amount=sum(Amount)) %>%
+      # Order spend category so shows better order in plots
+      mutate(spendCategory=factor(spendCategory, levels=unique(spendCategory[order(Amount)]))) %>%
+      ggplot(aes(spendCategory, Amount, fill=spendCategory)) + geom_bar(stat='identity') + 
+      geom_text(aes(label=Amount)) + 
+      xlab("") + ylab("") + 
+      theme(legend.position="none") + ggtitle(paste('Spend by category:', input$chosenMonth_g)) +
+      coord_flip()
+  })
+  
+  #+++++++++++++++
+  # Plot of spend over time, filterable by month & category, plus clickable output from above
+  #+++++++++++++++
+  
+  # Believe needs to be in reactive expression so I can pass to near_points() i.e. clickable output
+  plotdf_spends_g <- reactive({
+    # Filter down based on dashboard inputs
+    if(input$chosenMonth_g=='All Months') plotdf2 <- spendsdf_g else plotdf2 <- filter(spendsdf_g, month==input$chosenMonth_g)
+    if(input$chosenCategory_g=='AllCategories') plotdf3 <- plotdf2 else plotdf3 <- filter(plotdf2, spendCategory==input$chosenCategory_g)
+    plotdf3
+  })
+  
+  # Plot
+  output$spendOverTime_g <- renderPlot({
+    plotdf_spends_g() %>%
+      ggplot(aes(Date, Amount)) + geom_point(colour='#00BFC4', alpha=0.9, size=2) + 
+      ylab("") + xlab("") +
+      ggtitle(paste('Spend over time:', input$chosenMonth_g, input$chosenCategory_g, '. Click on plot to see transactions below.'))
+  })
+  
+  #+++++++++++++++
+  # Clickable output from above plot
+  #+++++++++++++++
+  
+  output$spendOverTimeInfo_g <- renderTable({
+    nearPoints(plotdf_spends_g(), 
+               input$plot_click_g, threshold = 10, maxpoints = 100) %>%
+      transmute(Date=as.character(Date), Amount, Description)
+  })
+  
+  #+++++++++++++++
+  # Table of transactions, filterable by month, category, and mortgage y/n
+  #+++++++++++++++
+  
+  output$filteredTransactions_g <- renderTable({
+    
+    # Filter down based on dashboard inputs
+    if(input$chosenMonth_g=='All Months') tabledf2 <- spendsdf_g else tabledf2 <- filter(spendsdf_g, month==input$chosenMonth_g)
+    if(input$chosenCategory_g=='AllCategories') tabledf3 <- tabledf2 else tabledf3 <- filter(tabledf2, spendCategory==input$chosenCategory_g)
+    
+    # Plot
+    tabledf3 %>%
+      arrange(Date) %>%
+      # rename(Account=acc) %>%
+      mutate(Date=as.character(Date)) %>%
+      select(Date, Amount, Description) # , Account)
+  },
+  caption='All transactions for filtered options',
+  striped=TRUE,
+  caption.placement="top") # NB see xtable options for things like caption)
   
   #__________________________________________________________________________________________________________________________________
 
@@ -204,7 +344,7 @@ server <- function(input, output) {
       summarise(Amount=round(sum(Amount), 0)) %>%
       ggplot(aes(month, Amount)) + geom_bar(stat='identity', fill='#F8766D') +
       geom_text(aes(label=Amount)) +
-      xlab("") + ylab("Pay ($)") + ggtitle('Total pay per month')
+      xlab("") + ylab("") + ggtitle('Total pay per month')
   })
   
   #+++++++++++++++
@@ -221,7 +361,7 @@ server <- function(input, output) {
   output$payOverTime <- renderPlot({
     plotdf_pay() %>%
       ggplot(aes(Date, Amount)) + geom_point(colour='#00BFC4', alpha=0.9, size=2) +
-      ylab("Pay ($)") + xlab("") +
+      ylab("") + xlab("") +
       ggtitle(paste('Pay over time:', input$chosenMonth, '. Click on plot to see transactions below.'))
   })
 

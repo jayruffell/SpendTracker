@@ -17,10 +17,12 @@ suppressMessages(library(dplyr))
 suppressMessages(library(ggplot2))
 library(lubridate)
 library(shiny)
+library(stringr)
+library(pdftools)
 
 #__________________________________________________________________________________________________________________________________
 
-# Extract/read in data and classify transactions ----
+# Extract/read in TSB data and classify transactions ----
 #__________________________________________________________________________________________________________________________________
 
 #+++++++++++++++
@@ -96,7 +98,7 @@ dd <- dd %>%
   mutate(
     spendCategory=
       # Pay
-      ifelse((grepl('ANNALECT|50119ACC|MINISTRY OF|TAX FAM31', Description) & Amount > 0) |
+      ifelse((grepl('ANNALECT|50119ACC|MINISTRY OF|TAX FAM31|OMD', Description) & Amount > 0) |
                (grepl('RUFFELL', Description) & grepl('ACC', Description) & Amount > 0), 'Pay&GovnContributions',
 
              # Mortgage & bank fees
@@ -105,11 +107,11 @@ dd <- dd %>%
                            ifelse(grepl('LOAN INTEREST', Description), 'MortgageInterest',
 
                                   # Everything else
-                                  ifelse(grepl('FARRO|COUNT ?DOWN|PAK ?N ?SAVE|NEW ?WORLD|SAFFRON|EAT ?ME', Description), 'Groceries',
-                                                ifelse(grepl('SAAN|CAFE|DEAR JERVOIS|SUSHI|BAKERY|BISTRO|RESTAURANT|SUGARGRILL|STARK|1929|GOOD ?HOME|BEER ?BREW|DELI|MR ?ILLINGSWORTH|LIQUOR|KREEM', Description), 'CafesAlcohol&EatingOut',
-                                                       ifelse(grepl('Z TE AT|HEEM|UBER|CAR ?PARK|VTNZ|BP|TRANSPORT|CYCLES|TOURNAMENT|AT HOP', Description), 'Transport',
+                                  ifelse(grepl('FARRO|COUNT ?DOWN|PAK ?N ?SAVE|NEW ?WORLD|SAFFRON|EAT ?ME|SPORTS ?FUEL', Description), 'Groceries',
+                                                ifelse(grepl('SAAN|CAFE|DEAR JERVOIS|SUSHI|BAKERY|BISTRO|RESTAURANT|SUGARGRILL|STARK|1929|GOOD ?HOME|BEER ?BREW|BREWERY|DELI|MR ?ILLINGSWORTH|LIQUOR|KREEM|GARRISON PUBLIC|THAI', Description), 'CafesAlcohol&EatingOut',
+                                                       ifelse(grepl('^Z |HEEM|UBER|GULL|CAR ?PARK|VTNZ|BP|TRANSPORT|CYCLES|TOURNAMENT|AT HOP', Description), 'Transport',
                                                               ifelse(grepl('BABY|MOCKA|H ?& ?M|BAND ?OF ?BOYS|KID ?REPUBLIC|THE ?SLEEP ?STORE|ALYCE|G4U ?DOLLAR ?STORE|COTTON ?ON|WHITCOULLS', Description), 'Baby',
-                                                                     ifelse(grepl('MITRE|HAMMER|KINGS|CITTA|FREEDOM FURNITURE|HOMESTEAD PICTURE|SPOTLIGHT|STORAGE ?BOX|CARPET ?CLEAN|KODAK|REFUSE ?STATION', Description), 'Home&Garden',
+                                                                     ifelse(grepl('MITRE|HAMMER|KINGS|CITTA|FREEDOM FURNITURE|HOMESTEAD PICTURE|SPOTLIGHT|STORAGE ?BOX|CARPET ?CLEAN|KODAK|REFUSE ?STATION|GARRISONS|NURSERY', Description), 'Home&Garden',
                                                                             ifelse(grepl('WATERCARE|SLINGSHOT|SKINNY|AKL COUNCIL|MERIDIAN', Description), 'Utilities',
                                                                                    ifelse(grepl('PHARMACY|HEALTH NEW LYNN|PROACTIVE|ASTERON|PHYSIO', Description), 'Health',
                                                                                           ifelse(grepl('POP-UP ?GLOBE|NETFLIX|MOVIES|CINEMA', Description), 'Entertainment',
@@ -117,20 +119,20 @@ dd <- dd %>%
 dd <- dd %>%
   mutate(
     spendCategory=
-      ifelse(grepl('RODNEY ?WAYNE|CACI|HUE|ZARA|MOOCHI|SISTERS AND CO|KATHRYN ?WILSON|STITCHES|HAIRDRESS|KSUBI|KATIE ?AND ?LINA ?NAILS|MECCA|BRAS ?N ?THINGS|SASS & BIDE', Description) |
+      ifelse(grepl('RODNEY ?WAYNE|CACI|HUE|ZARA|MOOCHI|SISTERS AND CO|KATHRYN ?WILSON|STITCHES|HAIRDRESS|KSUBI|KATIE ?AND ?LINA ?NAILS|MECCA|BRAS ?N ?THINGS|SASS & BIDE|LULU|HUFFER|AS COLOUR', Description) |
                (grepl('SUPERETTE', Description) & Amount < -50), # separates superette store from dairies.
              'EmilyClothes&Beauty',
-             ifelse(grepl('BURGER|DOMINOS|WENDY|MCDONALDS|KEBAB|SUPERETTE', Description), 'FastFood',
+             ifelse(grepl('BURGER|DOMINOS|WENDY|MCDONALDS|KEBAB|SUPERETTE|SUBWAY|PITA ?PIT', Description), 'FastFood',
                     ifelse(grepl('K ?-?MART|FARMERS|WAREHOUSE|TWL 187 ST LUKES', Description), 'KmartFarmersWarehouse',
                            ifelse(grepl('^MO ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ?$', Description), 'MoPayments',
-                                  ifelse(grepl('CHARITY|FLOWERS|ELTON|S A F E', Description), 'Gifts&Charity',
+                                  ifelse(grepl('CHARITY|ANIMALS ?AUSTRALIA|PENINSULA BLOOM|FLOWERS|ELTON|S A F E', Description), 'Gifts&Charity',
                                          spendCategory))))))
     
 # For classfying new transactions
 dd %>%
   # Only look at latest month, if prev months done already
   mutate(month=format(Date, '%b %Y')) %>%
-  filter(month=='Mar 2019') %>%
+  filter(month=='Apr 2019') %>%
   filter(spendCategory=='Other') %>%
   # Split 'other' into known and unknown, so Im only classifying the latter
   mutate(
@@ -158,3 +160,153 @@ dd <- dd %>%
   left_join(monthOrder, by='month') %>%
   arrange(Date)
 dd$month <- factor(dd$month, levels=unique(dd$month[order(dd$myorder)]), ordered=TRUE)
+
+
+
+
+# --------------------------------------------------------------------------------------------------------------
+
+
+
+#__________________________________________________________________________________________________________________________________
+
+# Repeat all of above for groceries transactions ----
+#__________________________________________________________________________________________________________________________________
+
+#+++++++++++++++
+# Read in all transactions and convert from pdf to dataframe
+#+++++++++++++++
+
+grocfiles <- list.files(dataPath)[grepl('[Oo]rder', list.files(dataPath)) &
+                                    grepl('\\.pdf', list.files(dataPath))] 
+grocList <- list()
+for(f in 1:length(grocfiles)){
+  # Read in pdf and format to dataframe
+  g <- pdf_text(paste0(dataPath, grocfiles[f]))
+  g <- strsplit(g, '\r\n') # pdf_text uses \r\n to denote new line
+  g <- unlist(g) # 1 list element per page
+  g <- data.frame(item=g, stringsAsFactors = F)
+  
+  # Extract metadata: date
+  date <- g %>%
+    filter(grepl('Date\\s.*20[0-9][0-9]', item)) %>% # word date, then whitespace, ending in year
+    pull(item) 
+  date <- unique(str_extract(date, '[0-9]?[0-9].*20[0-9][0-9]'))
+  if(length(date)>1) stop('date is not uniquely defined')
+  
+  date <- paste(str_extract(date, '^[0-9]?[0-9]'), # day
+                str_extract(date, '[A-Z][a-z][a-z]'), # mo
+                str_extract(date, '20[0-9][0-9]$'), sep='-') # year
+  date <- as.Date(date, format='%d-%b-%Y')
+  
+  # Extract metadata: total price
+  total <- g %>%
+    filter(grepl('[Ii]nvoice ?[Tt]otal', item)) %>% # word date, then whitespace, ending in year
+    pull(item) 
+  total <- str_extract(total, '\\$[0-9][0-9][0-9]?[0-9]?\\.[0-9][0-9]$') # price only
+  if(length(total)>1) stop('total is not uniquely defined')
+  total <- as.numeric(gsub('\\$', '', total))
+  
+  # Extract metadata: delivery price
+  delivery <- g %>%
+    filter(grepl('[DD]elivery ?[Ff]ee', item)) %>% # word date, then whitespace, ending in year
+    pull(item) 
+  delivery <- str_extract(delivery, '\\$[0-9][0-9]?[0-9]?[0-9]?\\.[0-9][0-9]$') # price only
+  if(length(delivery)>1) stop('delivery price is not uniquely defined')
+  if(is.na(delivery)) stop('delivery price is undefined')
+  delivery <- as.numeric(gsub('\\$', '', delivery))
+  
+  # Filter down to purchased items - row starts with a number (reference), possibly preceded by some whitespace and ends with "$XXX.00" (price). Currently there are a bunch of other rows with e.g. our address, date, etc.
+  g <- g %>%
+    filter(grepl('^\\s.*[1-9].*\\$[0-9]?[0-9]?[0-9]\\.[0-9][0-9]$', item))
+  
+  # Add in price var & convert name to lower case
+  g <- g %>%
+    mutate(amount=str_extract(item, '\\$[0-9]?[0-9]?[0-9]\\.[0-9][0-9]$')) %>%
+    mutate(amount=as.numeric(gsub('\\$', '', amount))) %>%
+    mutate(item=tolower(item))
+  
+  # Pull out all remaining numbers and spaces from item, leaving only the item name (currently 'item' includes reference, quantity of item, unit price etc, separated by spaces)
+  g <- g %>%
+    mutate(item=str_extract(item, '[a-z].*[a-z]'))
+  
+  # Add in previous metadata - date and delivery price
+  g <- bind_rows(g, data.frame(item='delivery', amount=delivery, stringsAsFactors = F))
+  g <- mutate(g, date=date)
+  
+  # Check that order total matches sum of costs - ensures no rows were lost during data cleaning
+  if(is.na(total)) stop('Total is NA')
+  if(nrow(g[!complete.cases(g),])>0) stop('not all rows of g are complete cases')
+  if(is.na(total)) stop('Total is NA')
+  if(abs(sum(g$amount)-total)>5) stop('Price of individual items stripped out of pdf do not sum to total price') # error if off by >$5
+  
+  grocList[[f]] <- g
+}
+
+gg <- bind_rows(grocList)
+
+#+++++++++++++++
+# Dedupe 
+#+++++++++++++++
+
+gg <- distinct(gg)
+
+#+++++++++++++++
+# Create ordered factor for month, so ggplot will plot correctly ----
+#+++++++++++++++
+
+gg <- gg %>%
+  mutate(month=format(date, '%b %Y'))
+monthOrder <- gg %>%
+  arrange(date) %>%
+  distinct(month)
+monthOrder <- monthOrder %>%
+  mutate(myorder=1:nrow(.))
+gg <- gg %>%
+  left_join(monthOrder, by='month') %>%
+  arrange(date)
+gg$month <- factor(gg$month, levels=unique(gg$month[order(gg$myorder)]), ordered=TRUE)
+
+#+++++++++++++++
+# rename cols to be identical to dd, so i can repurpose other dd/shiny code, plus make spend -ve for same reason
+#+++++++++++++++
+
+gg <- gg %>%
+  rename(Date=date, Amount=amount, Description=item) %>%
+  mutate(Amount=Amount*-1)
+
+#+++++++++++++++
+# Classify transactions ----
+#+++++++++++++++
+
+gg$Description <- toupper(gg$Description)
+unique(gg$spendCategory)
+gg <- gg %>%
+  mutate(
+    spendCategory=
+      ifelse(grepl('FRESH PRODUCE|BEANS GREEN|SPINACH|TOMATOES|BLUEBERRIES|CARROTS', Description), 'Fruit&Veg',
+             ifelse(grepl('MILK|GOPALA|YOGHURT|CHEESE|ANCHOR', Description), 'Dairy',
+                    ifelse(grepl('PEANUT|ALMOND|SUNFLOWER|APRICOTS|RAISINS|WALNUTS|TASTI', Description), 'NutsSeeds&DriedFruit',
+                           ifelse(grepl('BEPANTHEN|TODDLER|BABY ?SNACKS|ONLY ORGANIC|LITTLE BELLIES|BABY FOOD|BABY WIPES|NAPPY|NAPPIES|WEETBIX|SPIRALS', Description), 'Baby',
+                                  ifelse(grepl('EGGS|CHICKEN|BEEF', Description), 'Meat&Eggs',
+                                         ifelse(grepl('OIL|MASTERFOODS|MRS ?ROGERS', Description), 'OilsHerbs&Spices',
+                                                ifelse(grepl('PASTA|RICE|CORN ?CHIPS|OATS|BREAD|VOGELS|TORTILLAS', Description), 'Carbs',
+                                                       ifelse(grepl('COFFEE|AVALANCHE', Description), 'Drinks',
+                                                              ifelse(grepl('PADS|LAUNDRY|WASH|TOILET|BATHROOM|TAMPON|REXONA|SCHICK|DOVE|BIN LINER|CLEANER|RUBBISH|PAPER', Description), 'Kitchen&Bathroom',                               ifelse(grepl('WHITTAKERS|CHOC|WINE|SAUVIGNON', Description), 'Treats',
+                                                                                                                                                                                                                                      ifelse(grepl('DELIVERY', Description), 'Delivery',
+                                                                                                                                                                                                                                             'Other'))))))))))))
+
+# For classfying new transactions
+gg %>%
+  # Only look at latest month, if prev months done already
+  mutate(month=format(Date, '%b %Y')) %>%
+  # filter(month=='Apr 2019') %>%
+  filter(spendCategory=='Other') %>%
+  # Split 'other' into known and unknown, so Im only classifying the latter
+  mutate(
+    spendCategory=
+      ifelse(grepl('TOMATO PASTE|HOT ?CROSS|BATTERY|HONEY', Description), 'Other_known', 'Other')) %>%
+  filter(spendCategory!='Other_known') %>%
+  arrange(Amount) %>%
+  select(Description, Amount, month) %>%
+  as.data.frame()

@@ -71,6 +71,49 @@ ui <- fluidPage(
              )
     ),
 
+    # SPEND BY CATEGORY - GROCERIES
+    tabPanel('Groceries', fluid=TRUE,
+             sidebarLayout(
+               
+               #+++++++++++++++
+               # UI inputs ----
+               #+++++++++++++++
+               
+               sidebarPanel(
+                 # Select month to plot
+                 radioButtons(inputId="chosenMonth_g",
+                              label=h4("Month"),
+                              choiceNames=as.list(c('All Months', rev(as.character(unique(gg$month))))),
+                              choiceValues=as.list(c('All Months', rev(as.character(unique(gg$month))))),
+                              selected='All Months'),
+
+                 # Select spend category to plot
+                 radioButtons(inputId="chosenCategory_g",
+                              label=h4("Spend Category"),
+                              choiceNames=as.list(c('AllCategories', unique(gg$spendCategory))),
+                              choiceValues=as.list(c('AllCategories', unique(gg$spendCategory))),
+                              selected='AllCategories')
+               ),
+               
+               #+++++++++++++++
+               # UI plot and table positions ----
+               #+++++++++++++++
+               
+               mainPanel(
+                 plotOutput("grocerySpendsCheck"),
+                 br(),
+                 plotOutput("spendByCategory_g"),
+                 br(),
+                 plotOutput("totalOutgoings_categoryFiltering_g"),
+                 br(),
+                 plotOutput("spendOverTime_g", click='plot_click_g'),
+                 tableOutput("spendOverTimeInfo_g"), # for clicking on plot and returning output
+                 br(),
+                 tableOutput("filteredTransactions_g")
+               )
+             )
+    ),
+    
     # PAY AND DEPOSITS
     tabPanel('Pay', fluid=TRUE,
              sidebarLayout(
