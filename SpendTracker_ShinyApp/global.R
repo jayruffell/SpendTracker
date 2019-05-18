@@ -183,8 +183,9 @@ grocList <- list()
 for(f in 1:length(grocfiles)){
   # Read in pdf and format to dataframe
   g <- pdf_text(paste0(dataPath, grocfiles[f]))
-  g <- strsplit(g, '\r\n') # pdf_text uses \r\n to denote new line
+  g <- str_split(g, '\n') # pdf_text uses \r\n to denote new line. 
   g <- unlist(g) # 1 list element per page
+  g <- gsub("\r", "", g) # pdf_text gives new lines an '\r\n' symbol, but shiny doesn't like this - have to split lines with '\n' then separately remove the \r
   g <- data.frame(item=g, stringsAsFactors = F)
   
   # Extract metadata: date
@@ -291,7 +292,7 @@ gg <- gg %>%
                                   ifelse(grepl('EGGS|CHICKEN|BEEF', Description), 'Meat&Eggs',
                                          ifelse(grepl('OIL|MASTERFOODS|MRS ?ROGERS', Description), 'OilsHerbs&Spices',
                                                 ifelse(grepl('PASTA|RICE|CORN ?CHIPS|OATS|BREAD|VOGELS|TORTILLAS', Description), 'Carbs',
-                                                       ifelse(grepl('COFFEE|AVALANCHE', Description), 'Drinks',
+                                                       ifelse(grepl('COFFEE|AVALANCHE', Description), 'Tea&Coffee',
                                                               ifelse(grepl('PADS|LAUNDRY|WASH|TOILET|BATHROOM|TAMPON|REXONA|SCHICK|DOVE|BIN LINER|CLEANER|RUBBISH|PAPER', Description), 'Kitchen&Bathroom',                               ifelse(grepl('WHITTAKERS|CHOC|WINE|SAUVIGNON', Description), 'Treats',
                                                                                                                                                                                                                                       ifelse(grepl('DELIVERY', Description), 'Delivery',
                                                                                                                                                                                                                                              'Other'))))))))))))
