@@ -1,12 +1,9 @@
-Just source any of the app scripts (global, ui or server) to run the app.
+INSTRUCTIONS
+- based on three data sources: TSB bank statements, Countdown online order receipts, and manually-entered grocery receipts.
+- all three data sources should be saved in the 'pastTransactionsData' folder inside the app's working directory.
+- TSB bank statements should have four files, 2 loan statements, 1 revolving credit and 1 credit card. The former 3 should be saved using the 'csv with balance' option on the TSB website and the latter should be the 'csv' option. They should be saved with the word "TSB" in the filename (which is the default from TSB).
+- Date ranges for TSB statements should overlap so that no transactions are missed. The app will de-dupe any duplicated transactions.
+- Countdown online order receipts should be in the default pdf format provided by countdown, and should be saved with the word "orderinvoice" in the filename (which is the default from Countdown). Again, better to have the same receipt twice that to miss one because the app will de-dupe.
+- Manually entered grocery receipt data should be added to the existing excel file 'manuallyEnteredGroceryReceipts'.
+ 
 
-Alternatively runApp.r can be used to run the scripts - aim is to source runApp.r and then make this a bat file so Emily can open it.
-
-Note also that I think any data must be in the same directory or a subdirectory of the above scripts.
-
-Batch file is so that Emily can launch the app with one click (there's a shortcut on the desktop).
-
-# Improvements to dash
-# - instructions that only show when data updates, then 'update data' button?
-# - instructions, i.e. must have 4 files in downloads folder for new d/ls
-# - show projected spend for current month based on days left

@@ -172,6 +172,15 @@ ui <- fluidPage(
                          br()
                )
              )
+    ),
+    
+    # INSTRUCTIONS
+    tabPanel('Instructions', fluid=TRUE, verbatimTextOutput("instructions") 
+             # sidebarLayout(
+             #   sidebarPanel(),
+               # mainPanel(textOutput("instructions")
+               # )
+             # )
     )
   )
 )
