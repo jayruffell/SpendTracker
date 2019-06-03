@@ -105,34 +105,79 @@ server <- function(input, output) {
   })
   
   #+++++++++++++++
-  # Plot of spend by category, filterable by month and mortgage y/n
+  # Plot of spend by category, filterable by month and mortgage y/n. If a month is selected, compare to Average 
   #+++++++++++++++
   
   output$spendByCategory <- renderPlot({
     
-    # Filter down based on dashboard inputs
-    if(input$chosenMonth=='All Months' & input$excludeMortgage=='No') {
-      plotdf <- spendsdf
-    } else if(input$chosenMonth=='All Months' & input$excludeMortgage=='Yes') {
-      plotdf <- filter(spendsdf, !grepl('Mortgage', spendCategory))
-    } else if(input$chosenMonth!='All Months' & input$excludeMortgage=='No') {
-      plotdf <- filter(spendsdf, month==input$chosenMonth)
-    } else if(input$chosenMonth!='All Months' & input$excludeMortgage=='Yes') {
-      plotdf <- filter(spendsdf, month==input$chosenMonth & !grepl('Mortgage', spendCategory))
+    ### First, if all months then don't compare selected month vs average
+    
+    # Filter down based on dashboard inputs 
+    if(input$chosenMonth=='All Months') {
+      if(input$excludeMortgage=='Yes') {
+        plotdf <- filter(spendsdf, !grepl('Mortgage', spendCategory))
+      } else {
+        plotdf <- spendsdf
+      }
+      
+      # Plot
+      plotdf %>%
+        group_by(spendCategory) %>%
+        summarise(Amount=sum(Amount)) %>%
+        # Order spend category so shows better order in plots
+        mutate(spendCategory=factor(spendCategory, levels=unique(spendCategory[order(Amount)]))) %>%
+        ggplot(aes(spendCategory, Amount, fill=spendCategory)) + geom_bar(stat='identity') + 
+        geom_text(aes(label=Amount)) + 
+        xlab("") + ylab("") + 
+        theme(legend.position="none") + ggtitle(paste('Spend by category:', input$chosenMonth)) +
+        coord_flip()
     }
     
-    # Plot
-    plotdf %>%
-      group_by(spendCategory) %>%
-      summarise(Amount=sum(Amount)) %>%
-      # Order spend category so shows better order in plots
-      mutate(spendCategory=factor(spendCategory, levels=unique(spendCategory[order(Amount)]))) %>%
-      ggplot(aes(spendCategory, Amount, fill=spendCategory)) + geom_bar(stat='identity') + 
-      geom_text(aes(label=Amount)) + 
-      xlab("") + ylab("") + 
-      theme(legend.position="none") + ggtitle(paste('Spend by category:', input$chosenMonth)) +
-      coord_flip()
-  })
+    ### If a single month is selected, compare selected month vs average
+    else if(input$chosenMonth!='All Months') {
+      
+      if(input$excludeMortgage=='No') {
+        plotdf <- spendsdf %>% 
+          filter(month==input$chosenMonth) %>%
+          mutate(period='Selected month')
+        plotdf_av <- spendsdf %>% 
+          mutate(period='Average') %>%
+          # exclude final month, which may not have full data
+          filter(month!=max(month)) %>%
+          group_by(spendCategory, period) %>% 
+          summarise(Amount=round(sum(Amount)/length(unique(.$month)), 0))
+        plotdf <- bind_rows(plotdf, plotdf_av)
+          
+      } else if(input$chosenMonth!='All Months' & input$excludeMortgage=='Yes') {
+        plotdf <- spendsdf %>% 
+          filter(month==input$chosenMonth & !grepl('Mortgage', spendCategory)) %>%
+          mutate(period='Selected month')
+        plotdf_av <- spendsdf %>% 
+          filter(!grepl('Mortgage', spendCategory)) %>%
+          mutate(period='Average') %>%
+          # exclude final month, which may not have full data
+          filter(month!=max(month))%>%
+          group_by(spendCategory, period) %>% 
+          summarise(Amount=round(sum(Amount)/length(unique(.$month)), 0))
+        plotdf <- bind_rows(plotdf, plotdf_av)
+      }
+      
+      # Plot
+      plotdf %>%
+        group_by(spendCategory, period) %>%
+        summarise(Amount=sum(Amount)) %>%
+        ungroup() %>%
+        # # Order spend category so shows better order in plots
+        arrange(period, Amount) %>%
+        mutate(spendCategory=factor(spendCategory, levels=unique(spendCategory[order(Amount)]))) %>%
+        ggplot(aes(spendCategory, Amount, fill=period)) + geom_bar(width=0.7, stat='identity', position=position_dodge()) +
+        geom_text(aes(label=Amount), position=position_dodge(width=0.9)) +
+        xlab("") + ylab("") + 
+        # theme(legend.position="none") + 
+        ggtitle(paste('Spend by category:', input$chosenMonth)) +
+        coord_flip()
+    }
+  })  
   
   #+++++++++++++++
   # Plot of spend over time, filterable by month, category, and mortgage y/n, plus clickable output from above
@@ -240,7 +285,7 @@ server <- function(input, output) {
       summarise(Amount=round(sum(Amount), 0)) %>%
       ggplot(aes(month, Amount)) + geom_bar(stat='identity', fill='#F8766D') +
       geom_text(aes(label=Amount)) +
-      xlab("") + ylab("") + ggtitle(paste('Total spend per month:', input$chosenCategory_g))
+      xlab("") + ylab("") + ggtitle(paste0('Total spend per month: ', input$chosenCategory_g, ' (only includes offline orders post-Apr 2019).'))
   })
   
   #+++++++++++++++
@@ -249,24 +294,54 @@ server <- function(input, output) {
   
   output$spendByCategory_g <- renderPlot({
     
+    ### First, if all months then don't compare selected month vs average
+    
     # Filter down based on dashboard inputs
     if(input$chosenMonth_g=='All Months') {
       plotdf <- spendsdf_g
-    } else if(input$chosenMonth_g!='All Months') {
-      plotdf <- filter(spendsdf_g, month==input$chosenMonth_g)
-    }
-    
+
     # Plot
     plotdf %>%
       group_by(spendCategory) %>%
       summarise(Amount=sum(Amount)) %>%
       # Order spend category so shows better order in plots
       mutate(spendCategory=factor(spendCategory, levels=unique(spendCategory[order(Amount)]))) %>%
-      ggplot(aes(spendCategory, Amount, fill=spendCategory)) + geom_bar(stat='identity') + 
-      geom_text(aes(label=Amount)) + 
-      xlab("") + ylab("") + 
+      ggplot(aes(spendCategory, Amount, fill=spendCategory)) + geom_bar(stat='identity') +
+      geom_text(aes(label=Amount)) +
+      xlab("") + ylab("") +
       theme(legend.position="none") + ggtitle(paste('Spend by category:', input$chosenMonth_g)) +
       coord_flip()
+
+    ### If a single month is selected, compare selected month vs average - but exclude final month cos may not have complete data
+    
+    } else if(input$chosenMonth_g!='All Months') {
+      
+      plotdf <- spendsdf_g %>%
+        filter(month==input$chosenMonth_g) %>%
+        mutate(period='Selected month')
+      plotdf_av <- spendsdf_g %>% 
+        mutate(period='Average') %>%
+        # exclude final month, which may not have full data. And May 2019 onwards, cos groc. data is only complete from this month onwards.
+        filter(month!=max(month) & month>='May 2019') %>%
+        group_by(spendCategory, period) %>% 
+        summarise(Amount=round(sum(Amount)/length(unique(.$month)), 0))
+      plotdf <- bind_rows(plotdf, plotdf_av)
+      
+      # Plot
+      plotdf %>%
+        group_by(spendCategory, period) %>%
+        summarise(Amount=sum(Amount)) %>%
+        ungroup() %>%
+        # # Order spend category so shows better order in plots
+        arrange(period, Amount) %>%
+        mutate(spendCategory=factor(spendCategory, levels=unique(spendCategory[order(Amount)]))) %>%
+        ggplot(aes(spendCategory, Amount, fill=period)) + geom_bar(width=0.7, stat='identity', position=position_dodge()) +
+        geom_text(aes(label=Amount), position=position_dodge(width=0.9)) +
+        xlab("") + ylab("") + 
+        # theme(legend.position="none") + 
+        ggtitle(paste('Spend by category:', input$chosenMonth_g)) +
+        coord_flip()
+    }
   })
   
   #+++++++++++++++

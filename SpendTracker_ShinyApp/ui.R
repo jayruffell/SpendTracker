@@ -100,8 +100,6 @@ ui <- fluidPage(
                #+++++++++++++++
                
                mainPanel(
-                 plotOutput("grocerySpendsCheck"),
-                 br(),
                  plotOutput("spendByCategory_g"),
                  br(),
                  plotOutput("totalOutgoings_categoryFiltering_g"),
@@ -109,7 +107,9 @@ ui <- fluidPage(
                  plotOutput("spendOverTime_g", click='plot_click_g'),
                  tableOutput("spendOverTimeInfo_g"), # for clicking on plot and returning output
                  br(),
-                 tableOutput("filteredTransactions_g")
+                 tableOutput("filteredTransactions_g"),
+                 br(),
+                 plotOutput("grocerySpendsCheck")
                )
              )
     ),

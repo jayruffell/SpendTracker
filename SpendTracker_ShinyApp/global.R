@@ -12,13 +12,13 @@
 # Specify data path - where downloaded trans data gets saved, and prev data gets read in from. NOTE SHINY NEEDS RELATIVE PATHS FROM THE APP WORKING DIR IF GETTING PUBLISHED TO SERVER.  
 # dataPath <- 'C:/Users/user/Documents/JAMES/SpendTracker/SpendTracker_ShinyApp/pastTransactionsData/' # local version
 dataPath <- 'pastTransactionsData/' # server version
-
 suppressMessages(library(dplyr))
 suppressMessages(library(ggplot2))
 library(lubridate)
 library(shiny)
 library(stringr)
 library(pdftools)
+library(readxl)
 
 #__________________________________________________________________________________________________________________________________
 
@@ -173,6 +173,11 @@ dd$month <- factor(dd$month, levels=unique(dd$month[order(dd$myorder)]), ordered
 # Repeat all of above for groceries transactions ----
 #__________________________________________________________________________________________________________________________________
 
+#__________________________________________________________________________________________________________________________________
+
+# First, online countdown order statements ----
+#__________________________________________________________________________________________________________________________________
+
 #+++++++++++++++
 # Read in all transactions and convert from pdf to dataframe
 #+++++++++++++++
@@ -246,6 +251,30 @@ for(f in 1:length(grocfiles)){
 
 gg <- bind_rows(grocList)
 
+#__________________________________________________________________________________________________________________________________
+
+# Now add manually entered grocery statements ----
+#__________________________________________________________________________________________________________________________________
+
+#+++++++++++++++
+# Read in transactions
+#+++++++++++++++
+
+mm <- read_excel(paste0(dataPath, 'manuallyEnteredGroceryReceipts.xlsx'))
+mm$date <- as.Date(mm$date)
+  
+#__________________________________________________________________________________________________________________________________
+
+# Continue with groceries - manually entered and Countdown online orders combined ----
+#__________________________________________________________________________________________________________________________________
+
+#++++++++++++++
+# Bind both grocery transaction types together
+#++++++++++++++
+
+gg <- bind_rows(gg, mm)
+rm(mm)
+
 #+++++++++++++++
 # Dedupe 
 #+++++++++++++++
@@ -285,17 +314,18 @@ unique(gg$spendCategory)
 gg <- gg %>%
   mutate(
     spendCategory=
-      ifelse(grepl('FRESH PRODUCE|BEANS GREEN|SPINACH|TOMATOES|BLUEBERRIES|CARROTS', Description), 'Fruit&Veg',
-             ifelse(grepl('MILK|GOPALA|YOGHURT|CHEESE|ANCHOR', Description), 'Dairy',
-                    ifelse(grepl('PEANUT|ALMOND|SUNFLOWER|APRICOTS|RAISINS|WALNUTS|TASTI', Description), 'NutsSeeds&DriedFruit',
-                           ifelse(grepl('BEPANTHEN|TODDLER|BABY ?SNACKS|ONLY ORGANIC|LITTLE BELLIES|BABY FOOD|BABY WIPES|NAPPY|NAPPIES|WEETBIX|SPIRALS', Description), 'Baby',
+      ifelse(grepl('FRESH PRODUCE|BEANS GREEN|SPINACH|TOMATOES|BLUEBERRIES|CARROTS|POTATOES|MIXED VEGETABLES|FROZEN PEAS', Description), 'Fruit&Veg',
+             ifelse(grepl('MILK|GOPALA|YOGHURT|CHEESE|ANCHOR|CREAM', Description), 'Dairy',
+                    ifelse(grepl('PEANUT|ALMOND|SUNFLOWER|APRICOTS|RAISINS|WALNUTS|TASTI|MIXED NUTS|CRANBERR', Description), 'NutsSeeds&DriedFruit',
+                           ifelse(grepl('BEPANTHEN|TODDLER|BABY ?SNACKS|ONLY ORGANIC|RAFFERTY|LITTLE BELLIES|BABY FOOD|BABY WIPES|NAPPY|NAPPIES|WEETBIX|SPIRALS', Description), 'Baby',
                                   ifelse(grepl('EGGS|CHICKEN|BEEF', Description), 'Meat&Eggs',
                                          ifelse(grepl('OIL|MASTERFOODS|MRS ?ROGERS', Description), 'OilsHerbs&Spices',
-                                                ifelse(grepl('PASTA|RICE|CORN ?CHIPS|OATS|BREAD|VOGELS|TORTILLAS', Description), 'Carbs',
-                                                       ifelse(grepl('COFFEE|AVALANCHE', Description), 'Tea&Coffee',
-                                                              ifelse(grepl('PADS|LAUNDRY|WASH|TOILET|BATHROOM|TAMPON|REXONA|SCHICK|DOVE|BIN LINER|CLEANER|RUBBISH|PAPER', Description), 'Kitchen&Bathroom',                               ifelse(grepl('WHITTAKERS|CHOC|WINE|SAUVIGNON', Description), 'Treats',
-                                                                                                                                                                                                                                      ifelse(grepl('DELIVERY', Description), 'Delivery',
-                                                                                                                                                                                                                                             'Other'))))))))))))
+                                                ifelse(grepl('TOFFEES|WHITTAKERS|CADBURY|CHOC|WINE|SAUVIGNON|MALTESERS|LIQUORICE|LICORICE', Description), 'Treats',
+                                                       ifelse(grepl('PASTA|RICE|CORN ?CHIPS|OATS|BREAD|VOGELS|TORTILLAS|BAGELS|LENTILS', Description), 'Carbs',
+                                                              ifelse(grepl('COFFEE|AVALANCHE|PLUNGER', Description), 'Tea&Coffee',
+                                                                     ifelse(grepl('PADS|LAUNDRY|WASH|TOILET|BATHROOM|TAMPON|REXONA|SCHICK|DOVE|BIN LINER|CLEANER|RUBBISH|PAPER|SCOTCH BRITE|NASAL|NUROFEN|PARACETAMOL|SNAPLOCK|TISSUES|DISH BRUSH', Description), 'Kitchen&Bathroom',                               
+                                                                            ifelse(grepl('DELIVERY', Description), 'Delivery',
+                                                                                   'Other'))))))))))))
 
 # For classfying new transactions
 gg %>%
@@ -306,7 +336,7 @@ gg %>%
   # Split 'other' into known and unknown, so Im only classifying the latter
   mutate(
     spendCategory=
-      ifelse(grepl('TOMATO PASTE|HOT ?CROSS|BATTERY|HONEY', Description), 'Other_known', 'Other')) %>%
+      ifelse(grepl('TOMATO PASTE|HOT ?CROSS|BATTERY|HONEY|SALT|MARMALADE|SOUP', Description), 'Other_known', 'Other')) %>%
   filter(spendCategory!='Other_known') %>%
   arrange(Amount) %>%
   select(Description, Amount, month) %>%
