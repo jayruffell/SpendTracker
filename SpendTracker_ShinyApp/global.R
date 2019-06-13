@@ -32,7 +32,7 @@ library(readxl)
 oldtsbfiles <- list.files(dataPath)[grepl('[Tt][Ss][Bb]', list.files(dataPath))] # calling 'old' cos I used to read new files in from different locn, but Shiny didn't like this.
 oldList <- lapply(oldtsbfiles, function(x) {
   trans <- read.csv(paste0(dataPath, x), stringsAsFactors = FALSE)
-  if(grepl('4548670363823106', x)) trans <- mutate(trans, acc='visa')
+  if(grepl('454867036', x)) trans <- mutate(trans, acc='visa')
   if(grepl('70015100640', x)) trans <- mutate(trans, acc='mortgage1')
   if(grepl('70015100641', x)) trans <- mutate(trans, acc='mortgage2')
   if(grepl('70015100647', x)) trans <- mutate(trans, acc='revolving')
@@ -76,7 +76,8 @@ dd <- dd %>%
 # Exclude payments to Visa account - cos these will show up as both a -ve out of revolving and a +ve into visa. Just want anything bought out of visa to show up once, in visa acc.
 dd <- dd %>%
   filter(acc!='visa' | !grepl('PAYMENT RECEIVED', Description)) %>%
-  filter(acc!='revolving' | !grepl('credit card', Particulars))
+  filter(acc!='revolving' | !grepl('credit card', Particulars)) %>%
+  filter(acc!='revolving' | !grepl('T/f To 4548', Description))
 
 # Also exclude mortgage repayments that show up as a +ve into mortgage accounts, for same reason as above
 dd <- dd %>%
@@ -108,13 +109,13 @@ dd <- dd %>%
 
                                   # Everything else
                                   ifelse(grepl('FARRO|COUNT ?DOWN|PAK ?N ?SAVE|NEW ?WORLD|SAFFRON|EAT ?ME|SPORTS ?FUEL', Description), 'Groceries',
-                                                ifelse(grepl('SAAN|CAFE|DEAR JERVOIS|SUSHI|BAKERY|BISTRO|RESTAURANT|SUGARGRILL|STARK|1929|GOOD ?HOME|BEER ?BREW|BREWERY|DELI|MR ?ILLINGSWORTH|LIQUOR|KREEM|GARRISON PUBLIC|THAI', Description), 'CafesAlcohol&EatingOut',
-                                                       ifelse(grepl('^Z |HEEM|UBER|GULL|CAR ?PARK|VTNZ|BP|TRANSPORT|CYCLES|TOURNAMENT|AT HOP', Description), 'Transport',
+                                                ifelse(grepl('SAAN|CAFE|DEAR JERVOIS|SUSHI|KOKORO|OZONE|MONTANA CATERING|BAKERY|BISTRO|RESTAURANT|SUGARGRILL|STARK|1929|GOOD ?HOME|BEER ?BREW|BREWERY|DELI|MR ?ILLINGSWORTH|LIQUOR|KREEM|GARRISON PUBLIC|THAI|CHINOISERIE', Description), 'CafesAlcohol&EatingOut',
+                                                       ifelse(grepl('^Z |HEEM|UBER|GULL|CAR ?PARK|VTNZ|BP|TRANSPORT|CYCLES|TOURNAMENT|WILSON PARKING|AT HOP', Description), 'Transport',
                                                               ifelse(grepl('BABY|MOCKA|H ?& ?M|BAND ?OF ?BOYS|KID ?REPUBLIC|THE ?SLEEP ?STORE|ALYCE|G4U ?DOLLAR ?STORE|COTTON ?ON|WHITCOULLS', Description), 'Baby',
-                                                                     ifelse(grepl('MITRE|HAMMER|KINGS|CITTA|FREEDOM FURNITURE|HOMESTEAD PICTURE|SPOTLIGHT|STORAGE ?BOX|CARPET ?CLEAN|KODAK|REFUSE ?STATION|GARRISONS|NURSERY', Description), 'Home&Garden',
+                                                                     ifelse(grepl('MITRE|HAMMER|KINGS|CITTA|FREEDOM FURNITURE|HOMESTEAD PICTURE|SPOTLIGHT|STORAGE ?BOX|CARPET ?CLEAN|KODAK|REFUSE ?STATION|GARRISONS|NURSERY|RATES|A CLEANER', Description), 'Home&Garden',
                                                                             ifelse(grepl('WATERCARE|SLINGSHOT|SKINNY|AKL COUNCIL|MERIDIAN', Description), 'Utilities',
                                                                                    ifelse(grepl('PHARMACY|HEALTH NEW LYNN|PROACTIVE|ASTERON|PHYSIO', Description), 'Health',
-                                                                                          ifelse(grepl('POP-UP ?GLOBE|NETFLIX|MOVIES|CINEMA', Description), 'Entertainment',
+                                                                                          ifelse(grepl('POP-UP ?GLOBE|NETFLIX|MOVIES|CINEMA|BANFF', Description), 'Entertainment',
                                                                                                  'Other')))))))))))))
 dd <- dd %>%
   mutate(
@@ -122,22 +123,22 @@ dd <- dd %>%
       ifelse(grepl('RODNEY ?WAYNE|CACI|HUE|ZARA|MOOCHI|SISTERS AND CO|KATHRYN ?WILSON|STITCHES|HAIRDRESS|KSUBI|KATIE ?AND ?LINA ?NAILS|MECCA|BRAS ?N ?THINGS|SASS & BIDE|LULU|HUFFER|AS COLOUR', Description) |
                (grepl('SUPERETTE', Description) & Amount < -50), # separates superette store from dairies.
              'EmilyClothes&Beauty',
-             ifelse(grepl('BURGER|DOMINOS|WENDY|MCDONALDS|KEBAB|SUPERETTE|SUBWAY|PITA ?PIT', Description), 'FastFood',
+             ifelse(grepl('BURGER|DOMINOS|WENDY|MCDONALDS|KEBAB|SUPERETTE|SUBWAY|PITA ?PIT|PIZZA', Description), 'FastFood',
                     ifelse(grepl('K ?-?MART|FARMERS|WAREHOUSE|TWL 187 ST LUKES', Description), 'KmartFarmersWarehouse',
                            ifelse(grepl('^MO ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ?$', Description), 'MoPayments',
-                                  ifelse(grepl('CHARITY|ANIMALS ?AUSTRALIA|PENINSULA BLOOM|FLOWERS|ELTON|S A F E', Description), 'Gifts&Charity',
+                                  ifelse(grepl('CHARITY|ANIMALS ?AUSTRALIA|PENINSULA BLOOM|FLOWERS|ELTON|S A F E|SAVE ANIMALS|FORME SPA', Description), 'Gifts&Charity',
                                          spendCategory))))))
     
 # For classfying new transactions
 dd %>%
   # Only look at latest month, if prev months done already
   mutate(month=format(Date, '%b %Y')) %>%
-  filter(month=='Apr 2019') %>%
+  filter(month=='May 2019') %>%
   filter(spendCategory=='Other') %>%
   # Split 'other' into known and unknown, so Im only classifying the latter
   mutate(
     spendCategory=
-      ifelse(grepl('APPLE NZ|GOOGLE ?STORAGE|SURF2SURF|NZEI', Description), 'Other_known', 'Other')) %>%
+      ifelse(grepl('APPLE NZ|GOOGLE ?STORAGE|SURF2SURF|NZEI|POST SHOP|BARBER', Description), 'Other_known', 'Other')) %>%
   filter(spendCategory!='Other_known') %>%
   arrange(desc(month), Amount) %>%
   select(-Balance, -spendCategory) %>%
@@ -160,7 +161,6 @@ dd <- dd %>%
   left_join(monthOrder, by='month') %>%
   arrange(Date)
 dd$month <- factor(dd$month, levels=unique(dd$month[order(dd$myorder)]), ordered=TRUE)
-
 
 
 
@@ -251,6 +251,9 @@ for(f in 1:length(grocfiles)){
 
 gg <- bind_rows(grocList)
 
+# Add datasource for subsequent data checks
+gg <- mutate(gg, dataSource='receipts_OnlineBuy')
+
 #__________________________________________________________________________________________________________________________________
 
 # Now add manually entered grocery statements ----
@@ -262,7 +265,10 @@ gg <- bind_rows(grocList)
 
 mm <- read_excel(paste0(dataPath, 'manuallyEnteredGroceryReceipts.xlsx'))
 mm$date <- as.Date(mm$date)
-  
+
+# Add datasource for subsequent data checks
+mm <- mutate(mm, dataSource='receipts_OfflineBuy')
+
 #__________________________________________________________________________________________________________________________________
 
 # Continue with groceries - manually entered and Countdown online orders combined ----

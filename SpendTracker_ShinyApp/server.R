@@ -244,9 +244,8 @@ server <- function(input, output) {
     #+++++++++++++++
     
     checkdf <- bind_rows(gg %>%
-                           group_by(Date) %>%
-                           summarise(Amount=sum(Amount)*-1) %>%
-                           mutate(dataSource='receipts'),
+                           group_by(Date, dataSource) %>%
+                           summarise(Amount=sum(Amount)*-1),
                          dd %>%
                            filter(Amount<0) %>% # there's an outlier where we got +$20 from countdown online. Rebate??
                            filter(spendCategory=='Groceries') %>%
