@@ -27,7 +27,7 @@ server <- function(input, output) {
       summarise(Amount=round(sum(Amount), 0)) %>%
       mutate(posneg=ifelse(Amount>0, 'pos', 'neg')) %>%
       ggplot(aes(month, Amount, fill=posneg)) + geom_bar(stat='identity') + 
-      geom_text(aes(label=Amount)) + 
+      geom_text(aes(label=Amount), vjust=-0.3) + 
       xlab("") + ylab("") + 
       theme(legend.position="none") + ggtitle('Overall balance (deposits minus withdrawals) per month')
   })
@@ -42,7 +42,7 @@ server <- function(input, output) {
       filter(Amount<0) %>%
       summarise(Amount=round(sum(Amount), 0)*-1) %>%
       ggplot(aes(month, Amount)) + geom_bar(stat='identity', fill='#F8766D') + 
-      geom_text(aes(label=Amount)) + 
+      geom_text(aes(label=Amount), vjust=-0.3) + 
       xlab("") + ylab("") + ggtitle('Total spend per month')
   })
   
@@ -100,7 +100,7 @@ server <- function(input, output) {
       group_by(month) %>%
       summarise(Amount=round(sum(Amount), 0)) %>%
       ggplot(aes(month, Amount)) + geom_bar(stat='identity', fill='#F8766D') +
-      geom_text(aes(label=Amount)) +
+      geom_text(aes(label=Amount), vjust=-0.3) +
       xlab("") + ylab("") + ggtitle(paste('Total spend per month:', input$chosenCategory))
   })
   
@@ -127,7 +127,7 @@ server <- function(input, output) {
         # Order spend category so shows better order in plots
         mutate(spendCategory=factor(spendCategory, levels=unique(spendCategory[order(Amount)]))) %>%
         ggplot(aes(spendCategory, Amount, fill=spendCategory)) + geom_bar(stat='identity') + 
-        geom_text(aes(label=Amount)) + 
+        geom_text(aes(label=Amount), hjust=-0.3) + 
         xlab("") + ylab("") + 
         theme(legend.position="none") + ggtitle(paste('Spend by category:', input$chosenMonth)) +
         coord_flip()
@@ -171,7 +171,7 @@ server <- function(input, output) {
         arrange(period, Amount) %>%
         mutate(spendCategory=factor(spendCategory, levels=unique(spendCategory[order(Amount)]))) %>%
         ggplot(aes(spendCategory, Amount, fill=period)) + geom_bar(width=0.7, stat='identity', position=position_dodge()) +
-        geom_text(aes(label=Amount), position=position_dodge(width=0.9)) +
+        geom_text(aes(label=Amount), position=position_dodge(width=0.9), hjust=-0.3) +
         xlab("") + ylab("") + 
         # theme(legend.position="none") + 
         ggtitle(paste('Spend by category:', input$chosenMonth)) +
@@ -283,7 +283,7 @@ server <- function(input, output) {
       group_by(month) %>%
       summarise(Amount=round(sum(Amount), 0)) %>%
       ggplot(aes(month, Amount)) + geom_bar(stat='identity', fill='#F8766D') +
-      geom_text(aes(label=Amount)) +
+      geom_text(aes(label=Amount), vjust=-0.3) +
       xlab("") + ylab("") + ggtitle(paste0('Total spend per month: ', input$chosenCategory_g, ' (only includes offline orders post-Apr 2019).'))
   })
   
@@ -306,7 +306,7 @@ server <- function(input, output) {
       # Order spend category so shows better order in plots
       mutate(spendCategory=factor(spendCategory, levels=unique(spendCategory[order(Amount)]))) %>%
       ggplot(aes(spendCategory, Amount, fill=spendCategory)) + geom_bar(stat='identity') +
-      geom_text(aes(label=Amount)) +
+      geom_text(aes(label=Amount), hjust=-0.3) +
       xlab("") + ylab("") +
       theme(legend.position="none") + ggtitle(paste('Spend by category:', input$chosenMonth_g)) +
       coord_flip()
@@ -335,7 +335,7 @@ server <- function(input, output) {
         arrange(period, Amount) %>%
         mutate(spendCategory=factor(spendCategory, levels=unique(spendCategory[order(Amount)]))) %>%
         ggplot(aes(spendCategory, Amount, fill=period)) + geom_bar(width=0.7, stat='identity', position=position_dodge()) +
-        geom_text(aes(label=Amount), position=position_dodge(width=0.9)) +
+        geom_text(aes(label=Amount), position=position_dodge(width=0.9), hjust=-0.3) +
         xlab("") + ylab("") + 
         # theme(legend.position="none") + 
         ggtitle(paste('Spend by category:', input$chosenMonth_g)) +
@@ -417,7 +417,7 @@ server <- function(input, output) {
       group_by(month) %>%
       summarise(Amount=round(sum(Amount), 0)) %>%
       ggplot(aes(month, Amount)) + geom_bar(stat='identity', fill='#F8766D') +
-      geom_text(aes(label=Amount)) +
+      geom_text(aes(label=Amount), vjust=-0.3) +
       xlab("") + ylab("") + ggtitle('Total pay per month')
   })
   

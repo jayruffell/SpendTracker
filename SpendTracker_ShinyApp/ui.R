@@ -59,9 +59,9 @@ ui <- fluidPage(
                #+++++++++++++++
 
                mainPanel(
-                 plotOutput("spendByCategory"),
+                 plotOutput("spendByCategory", height=500), # default is 400 [pixels]
                  br(),
-                 plotOutput("totalOutgoings_categoryFiltering"),
+                 plotOutput("totalOutgoings_categoryFiltering", height=250),
                  br(),
                  plotOutput("spendOverTime", click='plot_click'),
                  tableOutput("spendOverTimeInfo"), # for clicking on plot and returning output
@@ -100,9 +100,9 @@ ui <- fluidPage(
                #+++++++++++++++
                
                mainPanel(
-                 plotOutput("spendByCategory_g"),
+                 plotOutput("spendByCategory_g", height=500), # default is 400 pixels
                  br(),
-                 plotOutput("totalOutgoings_categoryFiltering_g"),
+                 plotOutput("totalOutgoings_categoryFiltering_g", height=250),
                  br(),
                  plotOutput("spendOverTime_g", click='plot_click_g'),
                  tableOutput("spendOverTimeInfo_g"), # for clicking on plot and returning output
