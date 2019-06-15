@@ -19,9 +19,9 @@ ui <- fluidPage(
              # # Outputs on balances 
              # tableOutput("finalBalances"),
              # br(),
-             plotOutput("totalBalance"),
+             plotOutput("totalBalance", height=250),
              br(),
-             plotOutput("totalOutgoings_noFiltering")),
+             plotOutput("totalOutgoings_noFiltering", height=250)),
     
     # SPEND BY CATEGORY
     tabPanel('Spend by category', fluid=TRUE,
@@ -139,7 +139,7 @@ ui <- fluidPage(
                mainPanel(
                  h5(helpText('"Pay" is defined as any deposits  over $300.')),
                  br(),
-                 plotOutput("payByMonth"),
+                 plotOutput("payByMonth", height=250),
                  br(),
                  plotOutput("payOverTime", click='plot_click2'),
                  tableOutput("payOverTimeInfo"), # for clicking on plot and returning output
