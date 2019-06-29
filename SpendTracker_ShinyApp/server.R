@@ -436,7 +436,7 @@ server <- function(input, output) {
     plotdf_pay() %>%
       ggplot(aes(Date, Amount)) + geom_point(colour='#00BFC4', alpha=0.9, size=2) +
       ylab("") + xlab("") +
-      ggtitle(paste('Pay over time:', input$chosenMonth, '. Click on plot to see transactions below.'))
+      ggtitle(paste('Pay over time:', input$chosenMonth3, '. Click on plot to see transactions below.'))
   })
 
   # Clickable output from above plot

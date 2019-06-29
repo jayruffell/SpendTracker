@@ -37,7 +37,7 @@ ui <- fluidPage(
                               label=h4("Month"),
                               choiceNames=as.list(c('All Months', rev(as.character(unique(dd$month))))),
                               choiceValues=as.list(c('All Months', rev(as.character(unique(dd$month))))),
-                              selected='All Months'),
+                              selected=max(dd$month)),
 
                  # If 'AllCategories' is chosen above, decide whether to exclude mortgage
                  radioButtons(inputId="excludeMortgage",
@@ -85,7 +85,7 @@ ui <- fluidPage(
                               label=h4("Month"),
                               choiceNames=as.list(c('All Months', rev(as.character(unique(gg$month))))),
                               choiceValues=as.list(c('All Months', rev(as.character(unique(gg$month))))),
-                              selected='All Months'),
+                              selected=max(dd$month)),
 
                  # Select spend category to plot
                  radioButtons(inputId="chosenCategory_g",
@@ -129,7 +129,7 @@ ui <- fluidPage(
                               label=h4("Month"),
                               choiceNames=as.list(c('All Months', rev(as.character(unique(dd$month))))),
                               choiceValues=as.list(c('All Months', rev(as.character(unique(dd$month))))),
-                              selected='All Months')
+                              selected=max(dd$month))
                ),
 
                #+++++++++++++++

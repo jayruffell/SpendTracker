@@ -76,6 +76,8 @@ dd <- dd %>%
 # Exclude payments to Visa account - cos these will show up as both a -ve out of revolving and a +ve into visa. Just want anything bought out of visa to show up once, in visa acc.
 dd <- dd %>%
   filter(acc!='visa' | !grepl('PAYMENT RECEIVED', Description)) %>%
+  filter(acc!='visa' | !grepl('PAYMENT - THANK YOU', Description)) %>%
+  filter(acc!='revolving' | !grepl('TSB Visa Centre', Description)) %>%
   filter(acc!='revolving' | !grepl('credit card', Particulars)) %>%
   filter(acc!='revolving' | !grepl('T/f To 4548', Description))
 
@@ -113,12 +115,12 @@ dd <- dd %>%
 
                                   # Everything else
                                   ifelse(grepl('FARRO|COUNT ?DOWN|PAK ?N ?SAVE|NEW ?WORLD|SAFFRON|EAT ?ME|SPORTS ?FUEL', Description), 'Groceries',
-                                                ifelse(grepl('SAAN|CAFE|DEAR JERVOIS|SUSHI|KOKORO|OZONE|MONTANA CATERING|BAKERY|BISTRO|RESTAURANT|SUGARGRILL|STARK|1929|GOOD ?HOME|BEER ?BREW|BREWERY|DELI|MR ?ILLINGSWORTH|LIQUOR|KREEM|GARRISON PUBLIC|THAI|CHINOISERIE', Description), 'CafesAlcohol&EatingOut',
-                                                       ifelse(grepl('^Z |HEEM|UBER|GULL|CAR ?PARK|VTNZ|BP|TRANSPORT|CYCLES|TOURNAMENT|WILSON PARKING|AT HOP', Description), 'Transport',
+                                                ifelse(grepl('SAAN|CAFE|DEAR JERVOIS|SUSHI|KOKORO|OZONE|MONTANA CATERING|BAKERY|BISTRO|RESTAURANT|SUGARGRILL|STARK|1929|GOOD ?HOME|BEER ?BREW|BREWERY|DELI|MR ?ILLINGSWORTH|LIQUOR|KREEM|GARRISON PUBLIC|THAI|CHINOISERIE|SANTHIYAS|HIGH TEA|KAI|ET TU', Description), 'CafesAlcohol&EatingOut',
+                                                       ifelse(grepl('^Z |HEEM|UBER|GULL|CAR ?PARK|VTNZ|BP|TRANSPORT|CYCLES|TOURNAMENT|WILSON PARKING|AT HOP|MOBIL |PEDALS', Description), 'Transport',
                                                               ifelse(grepl('STITCHFOX|TOYS|BABY|MOCKA|H ?& ?M|BAND ?OF ?BOYS|KID ?REPUBLIC|THE ?SLEEP ?STORE|ALYCE|G4U ?DOLLAR ?STORE|COTTON ?ON|WHITCOULLS', Description), 'Baby',
                                                                      ifelse(grepl('MITRE|HAMMER|KINGS|CITTA|FREEDOM FURNITURE|HOMESTEAD PICTURE|SPOTLIGHT|STORAGE ?BOX|CARPET ?CLEAN|KODAK|REFUSE ?STATION|GARRISONS|NURSERY|RATES|A CLEANER', Description), 'Home&Garden',
                                                                             ifelse(grepl('WATERCARE|SLINGSHOT|SKINNY|AKL COUNCIL|MERIDIAN', Description), 'Utilities',
-                                                                                   ifelse(grepl('PHARMACY|HEALTH NEW LYNN|PROACTIVE|ASTERON|PHYSIO', Description), 'Health',
+                                                                                   ifelse(grepl('PHARMACY|HEALTH NEW LYNN|PROACTIVE|ASTERON|PHYSIO|WHITE CROSS|WAITEMATA ?DHB', Description), 'Health',
                                                                                           ifelse(grepl('POP-UP ?GLOBE|NETFLIX|MOVIES|CINEMA|BANFF', Description), 'Entertainment',
                                                                                                  'Other')))))))))))))
 dd <- dd %>%
@@ -142,13 +144,12 @@ dd %>%
   # Split 'other' into known and unknown, so Im only classifying the latter
   mutate(
     spendCategory=
-      ifelse(grepl('APPLE NZ|GOOGLE ?STORAGE|SURF2SURF|NZEI|POST SHOP|BARBER', Description), 'Other_known', 'Other')) %>%
+      ifelse(grepl('APPLE NZ|GOOGLE ?STORAGE|SURF2SURF|NZEI|POST SHOP|BARBER|WIGGLE', Description), 'Other_known', 'Other')) %>%
   filter(spendCategory!='Other_known') %>%
   arrange(desc(month), Amount) %>%
   select(-Balance, -spendCategory) %>%
   as.data.frame()
 
-names(dd)
 #__________________________________________________________________________________________________________________________________
 
 # Create ordered factor for month, so ggplot will plot correctly ----
@@ -165,8 +166,6 @@ dd <- dd %>%
   left_join(monthOrder, by='month') %>%
   arrange(Date)
 dd$month <- factor(dd$month, levels=unique(dd$month[order(dd$myorder)]), ordered=TRUE)
-
-
 
 # --------------------------------------------------------------------------------------------------------------
 
@@ -324,16 +323,16 @@ unique(gg$spendCategory)
 gg <- gg %>%
   mutate(
     spendCategory=
-      ifelse(grepl('FRESH PRODUCE|BEANS GREEN|SPINACH|TOMATOES|BLUEBERRIES|CARROTS|POTATOES|KUMARA|MIXED VEGETABLES|FROZEN PEAS|GARLIC|ONIONS', Description), 'Fruit&Veg',
+      ifelse(grepl('FRESH PRODUCE|BEANS GREEN|SPINACH|TOMATOES|BLUEBERRIES|CARROTS|POTATOES|KUMARA|MIXED VEGETABLES|FROZEN PEAS|GARLIC|ONIONS|SWEET POTATO|KIWI ?FRUIT|MANDARINS|COURGETTE|GINGER|BANANAS', Description), 'Fruit&Veg',
              ifelse(grepl('MILK|GOPALA|YOGHURT|CHEESE|ANCHOR|CREAM', Description), 'Dairy',
                     ifelse(grepl('PEANUT|ALMOND|SUNFLOWER|APRICOTS|RAISINS|WALNUTS|TASTI|MIXED NUTS|CRANBERR', Description), 'NutsSeeds&DriedFruit',
                            ifelse(grepl('BEPANTHEN|TODDLER|BABY ?SNACKS|ONLY ORGANIC|RAFFERTY|LITTLE BELLIES|BABY FOOD|BABY WIPES|NAPPY|BANANA PORRIDGE|NAPPIES|WEETBIX|SPIRALS', Description), 'Baby',
                                   ifelse(grepl('EGGS|CHICKEN|BEEF', Description), 'Meat&Eggs',
                                          ifelse(grepl('OIL|MASTERFOODS|MRS ?ROGERS|PEPPERCORNS|PAPRIKA', Description), 'OilsHerbs&Spices',
-                                                ifelse(grepl('TOFFEES|WHITTAKERS|CADBURY|CHOC|WINE|SAUVIGNON|MALTESERS|LIQUORICE|LICORICE|JUICE', Description), 'Treats',
+                                                ifelse(grepl('TOFFEE|WHITTAKERS|CADBURY|CHOC|WINE|SAUVIGNON|MALTESERS|LIQUORICE|LICORICE|JUICE', Description), 'Treats',
                                                        ifelse(grepl('PASTA|RICE|CORN ?CHIPS|OATS|BREAD|VOGELS|TORTILLAS|BAGELS|LENTILS|TURTLE BEANS|KIDNEY', Description), 'Carbs&Pulses',
                                                               ifelse(grepl('COFFEE|AVALANCHE|PLUNGER', Description), 'Tea&Coffee',
-                                                                     ifelse(grepl('PADS|LAUNDRY|WASH|TOILET|BATHROOM|TAMPON|REXONA|SCHICK|DOVE|BIN LINER|CLEANER|RUBBISH|PAPER|SCOTCH BRITE|NASAL|NUROFEN|PARACETAMOL|SNAPLOCK|TISSUES|DISH BRUSH|MOISTURISER|HAIRSPRAY|PANADOL|FLOSS', Description), 'Kitchen&Bathroom',                               
+                                                                     ifelse(grepl('PADS|LAUNDRY|WASH|TOILET|BATHROOM|TAMPON|REXONA|SCHICK|DOVE|BIN LINER|CLEANER|RUBBISH|PAPER|SCOTCH BRITE|NASAL|NUROFEN|PARACETAMOL|SNAPLOCK|TISSUES|DISH BRUSH|MOISTURISER|HAIRSPRAY|PANADOL|FLOSS|TOOTHPASTE|SANITISER|BAND-?AID|PLASTERS', Description), 'Kitchen&Bathroom',                               
                                                                             ifelse(grepl('DELIVERY', Description), 'Delivery',
                                                                                    'Other'))))))))))))
 
@@ -341,12 +340,12 @@ gg <- gg %>%
 gg %>%
   # Only look at latest month, if prev months done already
   mutate(month=format(Date, '%b %Y')) %>%
-  # filter(month=='Apr 2019') %>%
+  filter(month=='Jun 2019') %>%
   filter(spendCategory=='Other') %>%
   # Split 'other' into known and unknown, so Im only classifying the latter
   mutate(
     spendCategory=
-      ifelse(grepl('TOMATO PASTE|HOT ?CROSS|BATTERY|HONEY|SALT|MARMALADE|SOUP|REUSABLE BAG|POPSICLES', Description), 'Other_known', 'Other')) %>%
+      ifelse(grepl('TOMATO PASTE|HOT ?CROSS|BATTERY|HONEY|SALT|MARMALADE|SOUP|REUSABLE BAG|POPSICLES|VEGEMITE|FLOWERS', Description), 'Other_known', 'Other')) %>%
   filter(spendCategory!='Other_known') %>%
   arrange(Amount) %>%
   select(Description, Amount, month) %>%
