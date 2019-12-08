@@ -89,6 +89,10 @@ dd <- dd %>%
 dd <- dd %>%
   filter(!grepl('mortgage', acc) | !grepl('Repayment', Particulars))
 
+# Exclude paying down loan out of revolving credit acc
+dd <- dd %>%
+  filter(!grepl('Lump sum', Description)  | Date!='2019-11-22')
+
 # Remove all dates prior to Jan 2019, cos we weren't getting full data (pay and/or spend going into Westpac still)
 dd <- dd %>%
   filter(Date>'2018-12-31')
@@ -116,27 +120,28 @@ dd <- dd %>%
 
                                   # Everything else
                                   ifelse(grepl('FARRO|COUNT ?DOWN|PAK ?N ?SAVE|NEW ?WORLD|SAFFRON|EAT ?ME|SPORTS ?FUEL', Description), 'Groceries',
-                                         ifelse(grepl('SAAN|CAFE|DEAR JERVOIS|SUSHI|KOKORO|OZONE|MONTANA CATERING|BAKERY|BISTRO|RESTAURANT|SUGARGRILL|STARK|1929|GOOD ?HOME|BEER ?BREW|TEED STREET LARDER|CHAPATI INDIAN|BREWERY|GENTA|DELI|MR ?ILLINGSWORTH|LIQUOR|KREEM|GARRISON PUBLIC|THAI|CHINOISERIE|SANTHIYAS|HIGH TEA|KAI|ET TU|LEIGH EATS|PANDORO', Description), 'CafesAlcohol&EatingOut',
-                                                ifelse(grepl('^Z |HEEM|UBER|GULL|AA INSURANCE|CAR ?PARK|VTNZ|BP|TRANSPORT|^GAS|CYCLES|TOURNAMENT|WILSON PARKING|AT HOP|MOBIL |PEDALS', Description), 'Transport',
+                                         ifelse(grepl('SAAN|CAFE|ORTOLANA|ROSEBANK COFFEE|DEAR JERVOIS|SUSHI|KOKORO|OZONE|MONTANA CATERING|BAKERY|BISTRO|RESTAURANT|SUGARGRILL|STARK|1929|GOOD ?HOME|BEER ?BREW|TEED STREET LARDER|INDIAN SUMMER|CHAPATI INDIAN|BREWERY|GENTA|DELI|MR ?ILLINGSWORTH|LIQUOR|KREEM|GARRISON PUBLIC|THAI|CENTRAL KITCHEN|CHINOISERIE|SANTHIYAS|HIGH TEA|KAI|ET TU|LEIGH EATS|PANDORO|LITTLE DISTRICT|BREWED AWAKENING|WINTERGARDENS|ACE KITCHEN|MEXICO', Description), 'CafesAlcohol&EatingOut',
+                                                ifelse(grepl('^Z |HEEM|UBER|GULL|TYRES|CAR ?PARK|VTNZ|BP|REPCO|TRANSPORT|^GAS|CYCLES|TOURNAMENT|WILSON PARKING|AT HOP|MOBIL |PEDALS', Description) | (grepl('AA INSURANCE', Description) & Amount >= -300), 'Transport',
                                                        ifelse(grepl('STITCHFOX|TOYS|BABY|MOCKA|H ?& ?M|BAND ?OF ?BOYS|KID ?REPUBLIC|THE ?SLEEP ?STORE|ALYCE|G4U ?DOLLAR ?STORE|COTTON ?ON|WHITCOULLS|EDWARD', Description) |
                                                                 (grepl('TWL', Description) & Amount==-179.00), 
                                                               'Baby',
-                                                              ifelse(grepl('MITRE|HAMMER|KINGS|CITTA|GARDENPOST|FREEDOM FURNITURE|HOMESTEAD PICTURE|SPOTLIGHT|STORAGE ?BOX|CARPET ?CLEAN|KODAK|REFUSE ?STATION|GARRISONS|NURSERY|RATES|A CLEANER', Description), 'Home&Garden',
+                                                              ifelse(grepl('MITRE|HAMMER|KINGS|CITTA|GARDENPOST|FREEDOM FURNITURE|HOMESTEAD PICTURE|SPOTLIGHT|STORAGE ?BOX|CARPET ?CLEAN|KODAK|REFUSE ?STATION|GARRISONS|NURSERY|RATES|A CLEANER', Description) |
+                                                                       (grepl('AA INSURANCE', Description) & Amount < -300), 'Home&Garden',
                                                                      ifelse(grepl('WATERCARE|SLINGSHOT|SKINNY|AKL COUNCIL|MERIDIAN', Description), 'Utilities',
-                                                                            ifelse(grepl('PHARMACY|ACCIDENT COMP CLAIMS|PHARM|HEALTH NEW LYNN|PROACTIVE|ASTERON|PHYSIO|WHITE CROSS|WAITEMATA ?DHB|KATHERINE RITCHIE|DEBIT RP', Description), 'Health',
-                                                                                   ifelse(grepl('POP-UP ?GLOBE|NETFLIX|MOVIES|READING LYNN|CINEMA|BANFF|YOUTUBE VIDEOS', Description), 'Entertainment',
+                                                                            ifelse(grepl('PHARMACY|ACCIDENT COMP CLAIMS|PHARM|IHERB|MEDICAL|UNICHEM|HEALTH NEW LYNN|PROACTIVE|ASTERON|PHYSIO|WHITE CROSS|WAITEMATA ?DHB|KATHERINE RITCHIE|DEBIT RP|WAITAKERE FOOT|DR DEVASHANA', Description) | grepl('YOGA', Particulars), 'Health',
+                                                                                   ifelse(grepl('POP-UP ?GLOBE|NETFLIX|MOVIES|READING LYNN|CINEMA|BANFF|YOUTUBE VIDEOS|AUCKLAND ZOO', Description), 'Entertainment',
                                                                                           'Other')))))))))))))
 dd <- dd %>%
   mutate(
     spendCategory=
-      ifelse(grepl('SMITH & CAUGHEY|RODNEY ?WAYNE|CACI|HUE|ZARA|MOOCHI|SISTERS AND CO|KATHRYN ?WILSON|STITCHES|HAIRDRESS|KSUBI|KATIE ?AND ?LINA ?NAILS|MECCA|BRAS ?N ?THINGS|SASS & BIDE|LULU|HUFFER|SHAMPOO N THINGS|AS COLOUR|MI PIACI|KAREN WALKER|BENDON', Description) |
+      ifelse(grepl('SMITH & CAUGHEY|RODNEY ?WAYNE|CACI|HUE|ZARA|MOOCHI|SISTERS AND CO|KATHRYN ?WILSON|STITCHES|HAIRDRESS|KSUBI|KATIE ?AND ?LINA ?NAILS|MECCA|BRAS ?N ?THINGS|SASS & BIDE|LULU|HUFFER|SHAMPOO N THINGS|AS COLOUR|MI PIACI|KAREN WALKER|BENDON|QUEEN NAIL|LONELY PONSONBY|ONCEIT|AREA 51|SHINE ON|VIVO', Description) |
                (grepl('SUPERETTE', Description) & Amount < -50), # separates superette store from dairies.
              'EmilyClothes&Beauty',
-             ifelse(grepl('BURGER|DOMINOS|WENDY|MCDONALDS|KEBAB|SUPERETTE|SUBWAY|PITA ?PIT|PIZZA|MEXICALI', Description), 'FastFood',
+             ifelse(grepl('BURGER|DOMINOS|WENDY|MCDONALD|KEBAB|SUPERETTE|SUBWAY|PITA ?PIT|PIZZA|MEXICALI', Description), 'FastFood',
                     ifelse(grepl('K ?-?MART|FARMERS|WAREHOUSE|TWL 187 ST LUKES', Description), 'KmartFarmersWarehouse',
                            ifelse(grepl('^MO ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ?$', Description), 'MoPayments',
-                                  ifelse(grepl('CHARITY|ANIMALS ?AUSTRALIA|PENINSULA BLOOM|FLOWERS|ELTON|S A F E|SAVE ANIMALS|FORME SPA', Description), 'Gifts&Charity',
-                                         ifelse(grepl('SURF2SURF|BARBER|HALLENSTEINS|TORPEDO 7', Description) |
+                                  ifelse(grepl('CHARITY|ANIMALS ?AUSTRALIA|PENINSULA BLOOM|FLOWERS|ELTON|S A F E|SAVE ANIMALS|FORME SPA|TICKETMASTER|AUCKLAND AQUARIUM LTD', Description), 'Gifts&Charity',
+                                         ifelse(grepl('SURF2SURF|BARBER|HALLENSTEINS|TORPEDO 7|AMZN MKTP|JUSTCUTS|WEST AUCKLAND HOSPICE|SURF SHOP', Description) |
                                                   (grepl('WESTPAC', Description) & grepl(-250, Amount)), 'Jay',
                                                 spendCategory)))))))
 
@@ -144,12 +149,12 @@ dd <- dd %>%
 dd %>%
   # Only look at latest month, if prev months done already
   mutate(month=format(Date, '%b %Y')) %>%
-  filter(month=='Sep 2019') %>%
+  filter(month=='Nov 2019') %>%
   filter(spendCategory=='Other') %>%
   # Split 'other' into known and unknown, so Im only classifying the latter
   mutate(
     spendCategory=
-      ifelse(grepl('APPLE NZ|GOOGLE STORAGE|NZEI|POST SHOP|WIGGLE|MICROWAVE|WSL NEW LYNN', Description), 'Other_known', 'Other')) %>%
+      ifelse(grepl('APPLE NZ|GOOGLE STORAGE|NZEI|POST SHOP|WIGGLE|MICROWAVE|WSL NEW LYNN|APPLE.COM|AMAZON WEB SERVICES', Description), 'Other_known', 'Other')) %>%
   filter(spendCategory!='Other_known') %>%
   arrange(desc(month), Amount) %>%
   select(-Balance, -spendCategory) %>%
@@ -223,7 +228,7 @@ for(f in 1:length(grocfiles)){
   
   # Extract metadata: delivery price
   delivery <- g %>%
-    filter(grepl('[DD]elivery ?[Ff]ee', item)) %>% # word date, then whitespace, ending in year
+    filter(grepl('[DD]elivery ?[Ff]ee|[Pp]ick ?[Uu]p ?[Ff]ee', item)) %>% # word date, then whitespace, ending in year
     pull(item) 
   delivery <- str_extract(delivery, '\\$[0-9][0-9]?[0-9]?[0-9]?\\.[0-9][0-9]$') # price only
   if(length(delivery)>1) stop('delivery price is not uniquely defined')
@@ -328,16 +333,16 @@ unique(gg$spendCategory)
 gg <- gg %>%
   mutate(
     spendCategory=
-      ifelse(grepl('FRESH PRODUCE|BEANS GREEN|SPINACH|TOMATOES|BLUEBERRIES|CARROTS|POTATOES|KUMARA|MIXED VEGETABLES|FROZEN PEAS|GARLIC|ONIONS|SWEET POTATO|KIWI ?FRUIT|MANDARINS|COURGETTE|GINGER|BANANAS', Description), 'Fruit&Veg',
+      ifelse(grepl('FRESH PRODUCE|BEANS GREEN|SPINACH|TOMATOES|BLUEBERRIES|APPLES|CARROTS|POTATOES|KUMARA|MIXED VEGETABLES|FROZEN PEAS|GARLIC|ONIONS|SWEET POTATO|KIWI ?FRUIT|MANDARINS|COURGETTE|GINGER|BANANAS|FROZEN MIXED BERRIES', Description), 'Fruit&Veg',
              ifelse(grepl('MILK|GOPALA|YOGHURT|CHEESE|ANCHOR|CREAM', Description), 'Dairy',
                     ifelse(grepl('PEANUT|ALMOND|SUNFLOWER|APRICOTS|RAISINS|WALNUTS|TASTI|MIXED NUTS|CRANBERR', Description), 'NutsSeeds&DriedFruit',
-                           ifelse(grepl('BEPANTHEN|TODDLER|BABY ?SNACKS|ONLY ORGANIC|RAFFERTY|LITTLE BELLIES|BABY FOOD|BABY WIPES|NAPPY|BANANA PORRIDGE|NAPPIES|WEETBIX|SPIRALS', Description), 'Baby',
+                           ifelse(grepl('BEPANTHEN|TODDLER|FISH FINGERS|BABY ?SNACKS|ONLY ORGANIC|RAFFERTY|LITTLE BELLIES|BABY FOOD|BABY WIPES|NAPPY|BANANA PORRIDGE|NAPPIES|WEETBIX|SPIRALS', Description), 'Baby',
                                   ifelse(grepl('EGGS|CHICKEN|BEEF', Description), 'Meat&Eggs',
                                          ifelse(grepl('OIL|MASTERFOODS|MRS ?ROGERS|PEPPERCORNS|PAPRIKA', Description), 'OilsHerbs&Spices',
                                                 ifelse(grepl('TOFFEE|WHITTAKERS|CADBURY|CHOC|WINE|SAUVIGNON|MALTESERS|LIQUORICE|LICORICE|JUICE', Description), 'Treats',
                                                        ifelse(grepl('PASTA|RICE|CORN ?CHIPS|OATS|BREAD|VOGELS|TORTILLAS|BAGELS|LENTILS|TURTLE BEANS|KIDNEY', Description), 'Carbs&Pulses',
                                                               ifelse(grepl('COFFEE|AVALANCHE|PLUNGER', Description), 'Tea&Coffee',
-                                                                     ifelse(grepl('PADS|LAUNDRY|WASH|TOILET|BATHROOM|TAMPON|REXONA|SCHICK|DOVE|BIN LINER|CLEANER|RUBBISH|PAPER|SCOTCH BRITE|NASAL|NUROFEN|PARACETAMOL|SNAPLOCK|TISSUES|DISH BRUSH|MOISTURISER|HAIRSPRAY|PANADOL|FLOSS|TOOTHPASTE|SANITISER|BAND-?AID|PLASTERS', Description), 'Kitchen&Bathroom',                               
+                                                                     ifelse(grepl('PADS|LAUNDRY|WASH|TOILET|BATHROOM|TAMPON|REXONA|SCHICK|DOVE|BIN LINER|CLEANER|RUBBISH|PAPER|SCOTCH BRITE|NASAL|NUROFEN|PARACETAMOL|SNAPLOCK|SUNBLOCK|TISSUES|IBUPROFEN|DISH BRUSH|MOISTURISER|HAIRSPRAY|PANADOL|FLOSS|TOOTHPASTE|SANITISER|BAND-?AID|PLASTERS', Description), 'Kitchen&Bathroom',                               
                                                                             ifelse(grepl('DELIVERY', Description), 'Delivery',
                                                                                    'Other'))))))))))))
 
@@ -345,7 +350,7 @@ gg <- gg %>%
 gg %>%
   # Only look at latest month, if prev months done already
   mutate(month=format(Date, '%b %Y')) %>%
-  filter(month=='Jun 2019') %>%
+  filter(month=='Nov 2019') %>%
   filter(spendCategory=='Other') %>%
   # Split 'other' into known and unknown, so Im only classifying the latter
   mutate(
