@@ -29,7 +29,7 @@ server <- function(input, output) {
       ggplot(aes(month, Amount, fill=posneg)) + geom_bar(stat='identity', alpha=0.5) + 
       geom_text(aes(label=Amount), vjust=-0.3) + 
       xlab("") + ylab("") + 
-      theme(legend.position="none") + ggtitle('Overall balance (deposits minus withdrawals) per month')
+      theme(legend.position="none") + ggtitle('Overall balance (deposits minus withdrawals, currently includes mortage interest) per month')
   })
   
   #+++++++++++++++
