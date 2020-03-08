@@ -89,6 +89,37 @@ discrepdf %>%
 # IRD numbers - from tax assessment letter on myIRD ----
 #__________________________________________________________________________________________________________________________________
 
+# ----------------------------------------------------------------------------------------------------------------
+
+#++++++++++++++
+# UPDATE - IRD numbers appear to be correct. Based on Annalect and ACC earnings held by IRD (see png in working dir)
+#++++++++++++++
+
+# Annalect earnings from above source
+jobEarnings <- 105893.00
+jobTax <- 27312.50 # note this INCLUDES ACC LEVY - based on online calc, this no. is tax + levy given 105K income, per next 3 lines.
+jobPAYE <- 25864.69 # from online cacl
+jobACCLevy <- 1471.91 # from online calc
+jobTax - jobPAYE - jobACCLevy # pretty close. 
+# ==> Annalect deducted the correct amount (PAYE and and Levy) given how much they paid me, based on IRD's records
+
+# ACC earnings from above source
+accEarnings <- 34943.12
+accTax <- 8020.26
+
+# What should ACC PAYE and levy contribution have been, given that I'd already earned all that Annalech moolah? I.e. tax rate should have been max rate, and levy should have topped out at whatever max levy is. But accTax param above is far less than 33% of accEarnings, so something is going on.
+totPAYE <- 37395.32
+totACCLevy <- 1785.73 # this is what I should have paid given overall (Annalect + ACC) earnings, from online calc.
+(extraPAYEOwedFromACCpayments <- totPAYE - jobPAYE) 
+(extraLevyOwedFromACCpayments <- totACCLevy - jobACCLevy)
+# ==> YES! Levy was pretty much totally paid (extra earnings from ACC resulted in only a $300 levy increase) but extra PAYE owed was far greater than that which was paid - presumably cos it should have been paid at the highest tax rate but wasn't.
+
+# And roughly what I owed IRD (prior to paying back ACC overpayments) by these calculations:
+extraPAYEOwedFromACCpayments + extraLevyOwedFromACCpayments - accTax
+# ==> YES! Pretty close to what IRD says I owe them.
+
+# ----------------------------------------------------------------------------------------------------------------
+
 # IRD summary numbers
 amountOwed <- 3950.57
 Earnings <- 140836.12 # ACC and OMD
