@@ -149,6 +149,9 @@ ui <- fluidPage(
              )
     ),
 
+    # ACCOUNT BALANCES OVER TIME
+    tabPanel('Balances over time', fluid=TRUE, plotOutput("balancesOverTime", height=1000)),
+    
     # SUMMARY OF UNCLASSIFIED TRANSACTIONS
     tabPanel('Unclassified & duplicated transactions', fluid=TRUE,
              sidebarLayout(

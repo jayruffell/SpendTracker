@@ -555,6 +555,23 @@ server <- function(input, output) {
 
   #__________________________________________________________________________________________________________________________________
   
+  # Balances over time tab ----
+  #__________________________________________________________________________________________________________________________________
+  
+  output$balancesOverTime <- renderPlot({
+    
+    oldDF %>%
+      filter(!is.na(acc)) %>%
+      distinct() %>%
+      # Visa has no balance col, so have to create from Amount col manually
+      mutate(Balance=ifelse(acc!='visa', Balance, cumsum(Amount))) %>% 
+      ggplot(aes(Date, Balance, colour=acc)) + geom_line() + facet_wrap(~acc, scales='free', ncol=1) + 
+      theme(axis.text.x = element_text(angle = 90)) + theme(legend.position = 'none') + 
+      scale_x_date(date_minor_breaks='months')
+  })
+  
+  #__________________________________________________________________________________________________________________________________
+  
   # Unclassified transactions tab ----
   #__________________________________________________________________________________________________________________________________
   
