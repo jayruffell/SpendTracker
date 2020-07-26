@@ -147,7 +147,8 @@ dd <- dd %>%
                                   ifelse(grepl('TOYCO|EVERYDAY ?HERO|CHARITY|ANIMALS ?AUSTRALIA|PENINSULA BLOOM|FLOWERS|ELTON|S A F E|SAVE ANIMALS|FORME SPA|TICKETMASTER|AUCKLAND AQUARIUM LTD', Description), 'Gifts&Charity',
                                          ifelse(grepl('FIBREGLASS|SURF2SURF|SURFSTITCH|AUDIBLE|BARBER|RED\'S|HALLENSTEINS|TORPEDO 7|AMZN MKTP|DRCOMFORTS|SMARTBUYGLASSES|JUSTCUTS|WEST AUCKLAND HOSPICE|SURF SHOP|SURF SCHOOL|ASICS ONEHUNGA', Description) |
                                                   (grepl('WESTPAC', Description) & grepl(-250, Amount)), 'Jay',
-                                                spendCategory)))))))
+                                                ifelse(grepl('TRADE ?ME', Description), 'TradeMe',
+                                                spendCategory))))))))
 
 # For classfying new transactions
 tmp <- dd %>%
