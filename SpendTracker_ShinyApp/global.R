@@ -123,29 +123,29 @@ dd <- dd %>%
                            # ifelse(grepl('LOAN INTEREST', Description), 'MortgageInterest', # see note at top of script - this is double-counting interest repayments
 
                                   # Everything else
-                                  ifelse(grepl('FARRO|COUNT ?DOWN|PAK ?N ?SAVE|NEW ?WORLD|SAFFRON|EAT ?ME|SPORTS ?FUEL|HELLOFRESH', Description), 'Groceries',
-                                         ifelse(grepl('SAAN|PETAL|BODRAM|CAFE|GOODE|ORTOLANA|ROSEBANK COFFEE|DEAR JERVOIS|SUSHI|KOKORO|OZONE|MONTANA CATERING|BAKERY|BISTRO|RESTAURANT|SUGARGRILL|STARK|1929|GOOD ?HOME|BEER ?BREW|TEED STREET LARDER|INDIAN SUMMER|CHAPATI INDIAN|BREWERY|GENTA|DELI|MR ?ILLINGSWORTH|LIQUOR|KREEM|GARRISON PUBLIC|THAI|CENTRAL KITCHEN|CHINOISERIE|SANTHIYAS|HIGH TEA|KAI|ET TU|LEIGH EATS|PANDORO|LITTLE DISTRICT|BREWED AWAKENING|WINTERGARDENS|ACE KITCHEN|MEXICO|THE GREAT SPICE', Description), 'CafesAlcohol&EatingOut',
-                                                ifelse(grepl('^Z |HEEM|UBER|GULL|TYRES|CAR ?PARK|VTNZ|BP|REPCO|TRANSPORT|NEURON|SERVICE STATION|^GAS|CYCLES|TOURNAMENT|WILSON PARKING|AT HOP|MOBIL |PEDALS|NZAA', Description) | (grepl('AA INSURANCE', Description) & Amount >= -300), 'Transport',
+                                  ifelse(grepl('FARRO|COUNT ?DOWN|PAK ?N ?SAVE|NEW ?WORLD|SAFFRON|REFILL ?NATION|EAT ?ME|SPORTS ?FUEL|HELLOFRESH|WOOP', Description), 'Groceries',
+                                         ifelse(grepl('SAAN|PETAL|BODRAM|CAFE|FARIDAS|AMANO|GOODE|ORTOLANA|ROSEBANK COFFEE|DEAR JERVOIS|SUSHI|KOKORO|OZONE|MONTANA CATERING|BAKERY|BISTRO|RESTAURANT|SUGARGRILL|STARK|1929|GOOD ?HOME|BEER ?BREW|TEED STREET LARDER|INDIAN SUMMER|CHAPATI INDIAN|BREWERY|GENTA|DELI|MR ?ILLINGSWORTH|LIQUOR|KREEM|GARRISON PUBLIC|THAI|CENTRAL KITCHEN|CHINOISERIE|SANTHIYAS|HIGH TEA|KAI|KISS ?KISS|ET TU|LEIGH EATS|PANDORO|LITTLE DISTRICT|BREWED AWAKENING|WINTERGARDENS|ACE KITCHEN|MEXICO|THE GREAT SPICE', Description), 'CafesAlcohol&EatingOut',
+                                                ifelse(grepl('^Z |HEEM|UBER|GULL|TYRES|CAR ?PARK|VTNZ|EBIKEFIX|BP|REPCO|TRANSPORT|NEURON|SERVICE STATION|^GAS|CYCLES|TOURNAMENT|WILSON PARKING|AT HOP|MOBIL |PEDALS|NZAA', Description) | (grepl('AA INSURANCE', Description) & Amount >= -300), 'Transport',
                                                        ifelse(grepl('STITCHFOX|TOYS|BABY|MOCKA|H ?& ?M|BAND ?OF ?BOYS|KID ?REPUBLIC|THE ?SLEEP ?STORE|ALYCE|G4U ?DOLLAR ?STORE|COTTON ?ON|WHITCOULLS|EDWARD|TOY LIBRARY', Description) |
                                                                 (grepl('TWL', Description) & Amount==-179.00), 
                                                               'Baby',
-                                                              ifelse(grepl('MITRE|HAMMER|KINGS|CITTA|GARDENPOST|FREEDOM FURNITURE|ECOCITYELECTRICIANS|HOMESTEAD PICTURE|SPOTLIGHT|STORAGE ?BOX|CARPET ?CLEAN|KODAK|REFUSE ?STATION|GARRISONS|NURSERY|RATES|A CLEANER|CURTAINS|SHUT THE FRONT DOOR', Description) |
+                                                              ifelse(grepl('MITRE|HAMMER|KINGS|CITTA|GARDENPOST|FREEDOM FURNITURE|ECOCITYELECTRICIANS|HOMESTEAD PICTURE|SPOTLIGHT|STORAGE ?BOX|CARPET ?CLEAN|KODAK|REFUSE ?STATION|GARRISONS|NURSERY|RATES|A CLEANER|AAKLCOUNCIL|CURTAINS|SHUT THE FRONT DOOR', Description) |
                                                                        (grepl('AA INSURANCE', Description) & Amount < -300), 'Home&Garden',
                                                                      ifelse(grepl('WATERCARE|SLINGSHOT|SKINNY|AKL COUNCIL|MERIDIAN', Description), 'Utilities',
                                                                             ifelse(grepl('PHARMACY|ACCIDENT COMP CLAIMS|PHARM|IHERB|MEDICAL|UNICHEM|HEALTH NEW LYNN|PROACTIVE|ASTERON|PHYSIO|MEDSTRENGTH|WHITE CROSS|WAITEMATA ?DHB|KATHERINE RITCHIE|DEBIT RP|WAITAKERE FOOT|DR DEVASHANA', Description) | grepl('YOGA', Particulars), 'Health',
-                                                                                   ifelse(grepl('POP-UP ?GLOBE|NETFLIX|MOVIES|READING LYNN|CINEMA|BANFF|YOUTUBE VIDEOS|AUCKLAND ZOO|MOTAT|POP UP GLOBE|PARNELL BATHS', Description), 'Entertainment',
+                                                                                   ifelse(grepl('POP-UP ?GLOBE|NETFLIX|MOVIES|READING LYNN|CINEMA|BANFF|YOUTUBE VIDEOS|AUCKLAND ZOO|MOTAT|POP UP GLOBE|PARNELL BATHS|KELLY ?TARLTON', Description), 'Entertainment',
                                                                                           'Other'))))))))))))
 dd <- dd %>%
   mutate(
     spendCategory=
-      ifelse(grepl('SMITH & CAUGHEY|RODNEY ?WAYNE|CACI|HUE|ZARA|MOOCHI|SISTERS AND CO|KATHRYN ?WILSON|STITCHES|HAIRDRESS|KSUBI|KATIE ?AND ?LINA ?NAILS|MECCA|BRAS ?N ?THINGS|SASS & BIDE|LULU|HUFFER|SHAMPOO N THINGS|AS COLOUR|MI PIACI|KAREN WALKER|BENDON|QUEEN NAIL|LONELY PONSONBY|ONCEIT|AREA 51|SHINE ON|VIVO|LONELY HEARTS|HAIR|BASSIKE|DESIGNER WARDROBE|LUXURY NAILS|PEDICURE', Description) |
+      ifelse(grepl('SMITH & CAUGHEY|RODNEY ?WAYNE|CACI|HUE|ZARA|MOOCHI|SISTERS AND CO|KATHRYN ?WILSON|STITCHES|HAIRDRESS|KSUBI|KATIE ?AND ?LINA ?NAILS|MECCA|BRAS ?N ?THINGS|SASS & BIDE|LULU|HUFFER|SHAMPOO N THINGS|AS COLOUR|MI PIACI|KAREN WALKER|BENDON|QUEEN NAIL|LONELY PONSONBY|ONCEIT|AREA 51|SHINE ON|VIVO|LONELY HEARTS|HAIR|BASSIKE|DESIGNER WARDROBE|LUXURY NAILS|PEDICURE|P184180837|R&R NAILS|JULIETTE ?HOGAN|CLINIC ?42|DOSE AND CO|MAGGIE ?MARILYN', Description) |
                (grepl('SUPERETTE', Description) & Amount < -50), # separates superette store from dairies.
              'EmilyClothes&Beauty',
              ifelse(grepl('BURGER|DOMINOS|WENDY|MCDONALD|KEBAB|SUPERETTE|SUBWAY|PITA ?PIT|PIZZA|MEXICALI', Description), 'FastFood',
                     ifelse(grepl('K ?-?MART|FARMERS|WAREHOUSE|TWL 187 ST LUKES', Description), 'KmartFarmersWarehouse',
                            ifelse(grepl('^MO ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ?$', Description), 'MoPayments',
-                                  ifelse(grepl('CHARITY|ANIMALS ?AUSTRALIA|PENINSULA BLOOM|FLOWERS|ELTON|S A F E|SAVE ANIMALS|FORME SPA|TICKETMASTER|AUCKLAND AQUARIUM LTD', Description), 'Gifts&Charity',
-                                         ifelse(grepl('SURF2SURF|BARBER|RED\'S|HALLENSTEINS|TORPEDO 7|AMZN MKTP|JUSTCUTS|WEST AUCKLAND HOSPICE|SURF SHOP|SURF SCHOOL|ASICS ONEHUNGA', Description) |
+                                  ifelse(grepl('TOYCO|EVERYDAY ?HERO|CHARITY|ANIMALS ?AUSTRALIA|PENINSULA BLOOM|FLOWERS|ELTON|S A F E|SAVE ANIMALS|FORME SPA|TICKETMASTER|AUCKLAND AQUARIUM LTD', Description), 'Gifts&Charity',
+                                         ifelse(grepl('FIBREGLASS|SURF2SURF|SURFSTITCH|AUDIBLE|BARBER|RED\'S|HALLENSTEINS|TORPEDO 7|AMZN MKTP|DRCOMFORTS|SMARTBUYGLASSES|JUSTCUTS|WEST AUCKLAND HOSPICE|SURF SHOP|SURF SCHOOL|ASICS ONEHUNGA', Description) |
                                                   (grepl('WESTPAC', Description) & grepl(-250, Amount)), 'Jay',
                                                 spendCategory)))))))
 
@@ -153,8 +153,8 @@ dd <- dd %>%
 tmp <- dd %>%
   # Only look at latest month, if prev months done already
   mutate(month=format(Date, '%b %Y')) %>%
-  # filter(month=='Nov 2019') %>%
-  filter(Date>'2019-12-03') %>%
+  # filter(month=='Jul 2020') %>%
+  filter(Date>'2020-04-01') %>%
   filter(spendCategory=='Other') %>%
   # Split 'other' into known and unknown, so Im only classifying the latter
   mutate(
@@ -164,7 +164,7 @@ tmp <- dd %>%
   arrange(Amount, desc(month)) %>%
   select(-Balance, -spendCategory) %>%
   as.data.frame()
-tmp[50:100,]
+head(tmp, 100)
 
 #__________________________________________________________________________________________________________________________________
 
@@ -205,6 +205,7 @@ grocfiles <- list.files(dataPath)[grepl('[Oo]rder', list.files(dataPath)) &
                                     grepl('\\.pdf', list.files(dataPath))] 
 grocList <- list()
 for(f in 1:length(grocfiles)){
+
   # Read in pdf and format to dataframe
   g <- pdf_text(paste0(dataPath, grocfiles[f]))
   g <- str_split(g, '\n') # pdf_text uses \r\n to denote new line. 
@@ -263,11 +264,11 @@ for(f in 1:length(grocfiles)){
   if(is.na(total)) stop('Total is NA')
   if(nrow(g[!complete.cases(g),])>0) stop('not all rows of g are complete cases')
   if(is.na(total)) stop('Total is NA')
-  if(abs(sum(g$amount)-total)>5) stop('Price of individual items stripped out of pdf do not sum to total price') # error if off by >$5
-  
+  if(abs(sum(g$amount)-total)>5 &
+     g$date[1]!='2020-06-12' # think this one is off cos of a countdown gift card
+     ) stop('Price of individual items stripped out of pdf do not sum to total price') # error if off by >$5
   grocList[[f]] <- g
 }
-
 gg <- bind_rows(grocList)
 
 # Add datasource for subsequent data checks
